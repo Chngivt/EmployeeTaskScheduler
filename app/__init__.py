@@ -79,8 +79,8 @@ def create_app():
         # Tính từ Thứ Hai đầu tuần
         start_of_week = today - timedelta(days=today.weekday())
         
-        # Tạo danh sách 6 ngày trong tuần (Thứ 2 đến Thứ 7)
-        week_dates = [start_of_week + timedelta(days=i) for i in range(6)]
+        # Tạo danh sách 7 ngày trong tuần (Thứ 2 đến Chủ Nhật)
+        week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
         
         # Tạo dictionary lưu trữ lịch: key là (employee_id, date, shift) -> value là tên task
         schedule_dict = {}
@@ -94,5 +94,58 @@ def create_app():
                                employees=employees,
                                week_dates=week_dates,
                                schedule_dict=schedule_dict)
+
+    # --- API THỐNG KÊ CHO DASHBOARD ---
+    @app.route('/api/dashboard-stats')
+    def dashboard_stats():
+        from datetime import datetime, timedelta
+        from sqlalchemy import func
+        import json
+        
+        # Thống kê cơ bản
+        total_employees = Employee.query.count()
+        total_tasks = Task.query.count()
+        total_schedules = Schedule.query.count()
+        
+        # Lấy dữ liệu phân công theo ngày (7 ngày gần nhất)
+        today = datetime.now().date()
+        date_7_days_ago = today - timedelta(days=7)
+        
+        schedule_by_date = db.session.query(
+            Schedule.date, 
+            func.count(Schedule.id).label('count')
+        ).filter(
+            Schedule.date >= date_7_days_ago
+        ).group_by(Schedule.date).all()
+        
+        # Thống kê theo task (top 5)
+        top_tasks = db.session.query(
+            Task.task_name,
+            func.count(Schedule.id).label('count')
+        ).join(Schedule).group_by(Task.id).order_by(func.count(Schedule.id).desc()).limit(5).all()
+        
+        # Thống kê ca làm
+        shift_stats = db.session.query(
+            Schedule.shift,
+            func.count(Schedule.id).label('count')
+        ).group_by(Schedule.shift).all()
+        
+        return {
+            'total_employees': total_employees,
+            'total_tasks': total_tasks,
+            'total_schedules': total_schedules,
+            'schedule_by_date': [
+                {'date': s[0].strftime('%d/%m'), 'count': s[1]}
+                for s in schedule_by_date
+            ],
+            'top_tasks': [
+                {'name': t[0], 'count': t[1]}
+                for t in top_tasks
+            ],
+            'shift_stats': [
+                {'shift': s[0], 'count': s[1]}
+                for s in shift_stats
+            ]
+        }
 
     return app

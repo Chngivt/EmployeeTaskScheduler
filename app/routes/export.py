@@ -1,38 +1,38 @@
-import pandas as pd
-from flask import Blueprint, send_file
+import csv
 import io
+
+from flask import Blueprint, Response
+
+from app.models.employee import Employee
+from app.models.schedule import Schedule
 from app.models.task import Task
+from app.routes.auth import login_required
 
 export_bp = Blueprint('export', __name__)
 
+
 @export_bp.route('/export/tasks')
+@login_required
 def export_tasks():
-    # Lấy toàn bộ danh sách task từ database
-    tasks = Task.query.all()
-    
-    # Chuyển dữ liệu thành dạng danh sách từ điển
-    data = []
-    for t in tasks:
-        data.append({
-            'ID': t.id,
-            'Tên công việc': t.task_name,
-            'Mô tả': t.description,
-            'Trạng thái': t.status
-        })
-        
-    # Tạo DataFrame bằng pandas
-    df = pd.DataFrame(data)
-    
-    # Lưu ra bộ nhớ tạm dưới dạng file Excel
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='DanhSachTask')
-    output.seek(0)
-    
-    # Trả file về cho trình duyệt tải xuống
-    return send_file(
-        output,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name='Danh_sach_cong_viec.xlsx'
-    )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Mã nhân viên', 'Họ tên', 'Phòng ban', 'Ngày', 'Ca', 'Công việc', 'Mức độ', 'Thời lượng'])
+
+    schedules = Schedule.query.all()
+    for schedule in schedules:
+        employee = Employee.query.get(schedule.employee_id)
+        task = Task.query.get(schedule.task_id)
+        writer.writerow([
+            employee.code if employee else '',
+            employee.fullname if employee else '',
+            employee.department if employee else '',
+            schedule.date.strftime('%d/%m/%Y') if schedule.date else '',
+            schedule.shift,
+            task.task_name if task else '',
+            task.priority if task else '',
+            task.duration if task else '',
+        ])
+
+    response = Response(output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = 'attachment; filename=task_schedule.csv'
+    return response

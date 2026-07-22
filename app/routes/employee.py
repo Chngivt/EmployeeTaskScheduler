@@ -36,6 +36,30 @@ def add():
 
     return render_template('employee/add.html')
 
+
+@employee_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit(id):
+    emp = Employee.query.get_or_404(id)
+
+    if request.method == 'POST':
+        emp.fullname = request.form.get('fullname')
+        emp.email = request.form.get('email')
+        emp.phone = request.form.get('phone')
+        emp.department = request.form.get('department')
+        emp.position = request.form.get('position')
+        emp.role = request.form.get('role', emp.role)
+
+        password = request.form.get('password')
+        if password:
+            emp.set_password(password)
+
+        db.session.commit()
+        return redirect(url_for('employee.index'))
+
+    return render_template('employee/edit.html', emp=emp)
+
+
 @employee_bp.route('/delete/<int:id>')
 @login_required
 def delete(id):

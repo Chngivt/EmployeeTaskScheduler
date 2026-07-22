@@ -1,45 +1,55 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Danh sách Nhân viên</h2>
-    <!-- Nút Thêm nhân viên (hiện tại chưa có link, chúng ta làm ở bước sau) -->
-    <a href="/employee/add" class="btn btn-success">+ Thêm Nhân Viên</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Danh Sách Nhân Viên</h2>
+        <p class="text-muted mb-0">Quản lý thông tin và quyền hạn nhân viên trong hệ thống</p>
+    </div>
+    <a href="{{ url_for('employee.add') }}" class="btn btn-success shadow-sm"><i class="bi bi-plus-circle me-1"></i> Thêm Nhân Viên</a>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <table class="table table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>Mã NV</th>
-                    <th>Họ Tên</th>
-                    <th>Email</th>
-                    <th>Phòng Ban</th>
-                    <th>Chức Vụ</th>
-                    <th>Hành Động</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for emp in employees %}
-                <tr>
-                    <td>{{ emp.code }}</td>
-                    <td>{{ emp.fullname }}</td>
-                    <td>{{ emp.email }}</td>
-                    <td>{{ emp.department }}</td>
-                    <td>{{ emp.position }}</td>
-                    <td>
-                        <a href="/employee/edit/{{ emp.id }}" class="btn btn-sm btn-primary">Sửa</a>
-                       <a href="/employee/delete/{{ emp.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa nhân viên này?');">Xóa</a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="text-center">Chưa có nhân viên nào trong hệ thống.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="card border-0 rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="py-3 ps-4 fw-semibold">Mã NV</th>
+                        <th class="py-3 fw-semibold">Họ Tên</th>
+                        <th class="py-3 fw-semibold">Email</th>
+                        <th class="py-3 fw-semibold">Phòng Ban</th>
+                        <th class="py-3 fw-semibold">Chức Vụ</th>
+                        <th class="py-3 fw-semibold">Quyền Hạn</th>
+                        <th class="py-3 text-center fw-semibold">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td class="ps-4 fw-semibold text-primary">{{ emp.code }}</td>
+                        <td class="fw-semibold">{{ emp.fullname }}</td>
+                        <td>{{ emp.email }}</td>
+                        <td>{{ emp.department }}</td>
+                        <td>{{ emp.position }}</td>
+                        <td>
+                            <span class="badge {% if emp.role == 'admin' %}bg-danger{% else %}bg-info{% endif %} bg-opacity-10 text-{% if emp.role == 'admin' %}danger{% else %}info{% endif %} px-2 py-1">
+                                {% if emp.role == 'admin' %}<i class="bi bi-shield-check me-1"></i>Quản Trị{% else %}<i class="bi bi-person me-1"></i>Nhân Viên{% endif %}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ url_for('employee.edit', id=emp.id) }}" class="btn btn-sm btn-primary px-3"><i class="bi bi-pencil me-1"></i>Sửa</a>
+                            <a href="{{ url_for('employee.delete', id=emp.id) }}" class="btn btn-sm btn-danger px-3" onclick="return confirm('Bạn có chắc muốn xóa nhân viên này?');"><i class="bi bi-trash me-1"></i>Xóa</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">Chưa có nhân viên nào trong hệ thống.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -11,7 +11,7 @@
 
         <form action="/schedule/add" method="POST">
             <div class="mb-3">
-                <label>Chọn Nhân Viên</label>
+                <label class="form-label fw-semibold">Chọn Nhân Viên</label>
                 <select name="employee_id" class="form-select" required>
                     <option value="">-- Chọn nhân viên --</option>
                     {% for emp in employees %}
@@ -21,7 +21,7 @@
             </div>
             
             <div class="mb-3">
-                <label>Chọn Công Việc</label>
+                <label class="form-label fw-semibold">Chọn Công Việc</label>
                 <select name="task_id" class="form-select" required>
                     <option value="">-- Chọn công việc --</option>
                     {% for t in tasks %}
@@ -32,17 +32,19 @@
 
             <div class="row mb-4">
                 <div class="col-md-6">
-                    <label>Ngày Làm Việc</label>
+                    <label class="form-label fw-semibold">Ngày Làm Việc</label>
                     <input type="date" name="date" class="form-control" required>
                 </div>
                 <div class="col-md-6">
-    <label>Ca Làm Việc</label>
-    <select name="shift" class="form-select" required>
-        <option value="Sáng">Ca Sáng (07:30 - 11:30)</option>
-        <option value="Chiều">Ca Chiều (13:00 - 17:00)</option>
-        <option value="Tối">Ca Tối (18:00 - 21:30)</option>
-    </select>
-</div>
+                    <label class="form-label fw-semibold">Ca Làm Việc</label>
+                    <select name="shift" class="form-select" required>
+                        <option value="" disabled selected>-- Chọn ca làm việc --</option>
+                        <option value="Sáng">Ca Sáng</option>
+                        <option value="Trưa">Ca Trưa</option>
+                        <option value="Tối">Ca Tối</option>
+                    </select>
+                </div>
+            </div> <!-- Đã thêm thẻ đóng div row ở đây -->
 
             <div class="d-flex justify-content-between">
                 <a href="/schedule" class="btn btn-secondary">Quay lại</a>

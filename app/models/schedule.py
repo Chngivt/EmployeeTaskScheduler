@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 
 class Schedule(db.Model):
     __tablename__ = 'schedule'
@@ -9,4 +10,4 @@ class Schedule(db.Model):
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
     
     date = db.Column(db.Date, nullable=False)
-    shift = db.Column(db.String(20), nullable=False) # 'Sáng' hoặc 'Chiều'
+    shift = db.Column(db.String(20), nullable=False) # 'Sáng' hoặc 'Chiều' hoặc 'Tối'
