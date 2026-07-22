@@ -4,10 +4,12 @@ from app.models.employee import Employee
 from app.models.task import Task
 from app import db
 from datetime import datetime
+from app.routes.auth import login_required
 
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
 @schedule_bp.route('/')
+@login_required
 def index():
     # Lấy danh sách lịch phân công, sắp xếp theo ngày mới nhất
     schedules_list = Schedule.query.order_by(Schedule.date.desc()).all()

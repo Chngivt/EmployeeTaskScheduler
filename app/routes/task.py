@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.task import Task
 from app import db
+from app.routes.auth import login_required
 
 task_bp = Blueprint('task', __name__, url_prefix='/task')
 
 @task_bp.route('/')
+@login_required
 def index():
     tasks_list = Task.query.all()
     return render_template('task/index.html', tasks=tasks_list)
