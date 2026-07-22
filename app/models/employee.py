@@ -11,5 +11,4 @@ class Employee(db.Model):
     department = db.Column(db.String(50), nullable=False)
     position = db.Column(db.String(50), nullable=False)
     
-    # Mối quan hệ: Một nhân viên có thể có nhiều lịch phân công
     schedules = db.relationship('Schedule', backref='employee', lazy=True)
