@@ -17,6 +17,6 @@ class Config:
     MAIL_SERVER = 'smtp.googlemail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
-    MAIL_USERNAME = 'email_cua_ban@gmail.com'
-    MAIL_PASSWORD = 'app_password_gmail' # Mật khẩu ứng dụng Gmail
-    MAIL_DEFAULT_SENDER = 'email_cua_ban@gmail.com'
+    MAIL_USERNAME = 'caohoangviet738@gmail.com'
+    MAIL_PASSWORD = 'app_password_gmail'  # Thay bằng Mật khẩu ứng dụng (App Password) của Gmail
+    MAIL_DEFAULT_SENDER = 'caohoangviet738@gmail.com'

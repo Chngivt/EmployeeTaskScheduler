@@ -51,27 +51,34 @@
     <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
         <div>
             <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-calendar-week text-primary me-2"></i> Lịch làm việc tuần này</h5>
-             <small class="text-muted">Phân bố công việc chi tiết theo từng ca sáng/chiều của nhân viên</small>
-                </div>
-            <div class="badge bg-light text-dark border px-3 py-2 fw-normal">
-            {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
+             <small class="text-muted">Phân bố công việc chi tiết theo từng ca sáng/chiều/tối của nhân viên</small>
         </div>
-      </div>
+        
+        <!-- Nhóm nút Tải Excel và Hiển thị tuần -->
+        <div class="d-flex align-items-center gap-2">
+            <a href="/export/tasks" class="btn btn-success btn-sm shadow-sm">
+                <i class="fas fa-file-excel me-1"></i> Tải Excel công việc
+            </a>
+            <div class="badge bg-light text-dark border px-3 py-2 fw-normal">
+                {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
+            </div>
+        </div>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-bordered mb-0 align-middle text-center" style="font-size: 13px;">
-               <thead class="table-light">
-                   <tr>
+                <thead class="table-light">
+                    <tr>
                      <th style="width: 200px;" class="py-3 text-start ps-4">Nhân viên</th>
         {% set day_names = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'] %}
         {% for d in week_dates %}
-                 <th class="py-3">
-                     <div class="fw-bold">{{ day_names[loop.index0] }}</div>
-                     <small class="text-muted fw-normal" style="font-size: 11px;">{{ d.strftime('%d/%m') }}</small>
-         </th>
+                     <th class="py-3">
+                         <div class="fw-bold">{{ day_names[loop.index0] }}</div>
+                         <small class="text-muted fw-normal" style="font-size: 11px;">{{ d.strftime('%d/%m') }}</small>
+          </th>
         {% endfor %}
         </tr>
-            </thead>
+                </thead>
                 <tbody>
                     {% if employees %}
                         {% for emp in employees %}
@@ -103,7 +110,7 @@
                                 </div>
                                 
                                 <!-- Ô Ca Chiều -->
-                                <div class="p-2 rounded border text-start bg-white shadow-sm" style="min-height: 50px;">
+                                <div class="p-2 mb-1 rounded border text-start bg-white shadow-sm" style="min-height: 50px;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="badge bg-warning bg-opacity-15 text-dark fw-bold" style="font-size: 9px;">Chiều</span>
                                     </div>
@@ -111,7 +118,8 @@
                                         {{ schedule_dict.get((emp.id, d, 'Chiều'), 'Trống') if schedule_dict.get((emp.id, d, 'Chiều')) else '-' }}
                                     </div>
                                 </div>
-                            <!-- Ô Ca Tối (MỚI BỔ SUNG) -->
+
+                                <!-- Ô Ca Tối -->
                                 <div class="p-2 rounded border text-start bg-white shadow-sm" style="min-height: 45px;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="badge bg-dark bg-opacity-75 text-white fw-bold" style="font-size: 9px;">Tối</span>

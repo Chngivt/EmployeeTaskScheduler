@@ -60,6 +60,9 @@ def create_app():
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp)
 
+    from app.routes.export import export_bp
+    app.register_blueprint(export_bp)
+
     # --- ROUTE TRANG CHỦ (DASHBOARD) ---
     @app.route('/')
     def dashboard():
@@ -73,12 +76,16 @@ def create_app():
         schedules = Schedule.query.all()
         
         today = datetime.now().date()
+        # Tính từ Thứ Hai đầu tuần
         start_of_week = today - timedelta(days=today.weekday())
+        
+        # Tạo danh sách 6 ngày trong tuần (Thứ 2 đến Thứ 7)
         week_dates = [start_of_week + timedelta(days=i) for i in range(6)]
         
+        # Tạo dictionary lưu trữ lịch: key là (employee_id, date, shift) -> value là tên task
         schedule_dict = {}
         for s in schedules:
-            schedule_dict[(s.employee_id, s.date, s.shift)] = s.task.task_name
+            schedule_dict[(s.employee_id, s.date, s.shift)] = s.task.task_name if s.task else "Có lịch"
             
         return render_template('dashboard.html', 
                                total_emp=total_emp, 
