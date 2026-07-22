@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Danh sách Phân công</h2>
+    <a href="/schedule/add" class="btn btn-success">+ Tạo Phân Công</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Ngày Làm Việc</th>
+                    <th>Ca</th>
+                    <th>Nhân Viên</th>
+                    <th>Công Việc</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in schedules %}
+                <tr>
+                    <!-- Định dạng ngày dd-mm-yyyy -->
+                    <td><strong>{{ s.date.strftime('%d-%m-%Y') }}</strong></td>
+                    <td>
+                        {% if s.shift == 'Sáng' %} <span class="badge bg-info text-dark">Ca Sáng</span>
+                        {% else %} <span class="badge bg-secondary">Ca Chiều</span> {% endif %}
+                    </td>
+                    <!-- SQLAlchemy tự động liên kết khóa ngoại lấy ra tên -->
+                    <td>{{ s.employee.fullname }} ({{ s.employee.code }})</td>
+                    <td>{{ s.task.task_name }}</td>
+                    <td>
+                        <a href="/schedule/delete/{{ s.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Hủy phân công này?');">Xóa</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">Chưa có dữ liệu phân công.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

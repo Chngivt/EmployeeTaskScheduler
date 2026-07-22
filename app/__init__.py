@@ -30,8 +30,11 @@ def create_app():
     from app.routes.task import task_bp
     app.register_blueprint(task_bp)
 
+    from app.routes.schedule import schedule_bp
+    app.register_blueprint(schedule_bp)
+
     @app.route('/')
     def dashboard():
-        return "<h1>Hệ thống Employee Task Scheduler đã chạy thành công!</h1><a href='/employee'>Nhân viên</a> | <a href='/task'>Công việc</a>"
+        return "<h1>Hệ thống Employee Task Scheduler đã chạy thành công!</h1><a href='/employee'>Nhân viên</a> | <a href='/task'>Công việc</a> | <a href='/schedule'>Phân công</a>"
 
     return app

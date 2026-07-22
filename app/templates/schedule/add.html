@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow-sm mx-auto" style="max-width: 600px;">
+    <div class="card-header bg-success text-white"><h4>Tạo Phân Công Mới</h4></div>
+    <div class="card-body">
+        
+        <!-- Hiển thị thông báo lỗi nếu bị trùng lịch -->
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <form action="/schedule/add" method="POST">
+            <div class="mb-3">
+                <label>Chọn Nhân Viên</label>
+                <select name="employee_id" class="form-select" required>
+                    <option value="">-- Chọn nhân viên --</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}">{{ emp.code }} - {{ emp.fullname }} ({{ emp.department }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label>Chọn Công Việc</label>
+                <select name="task_id" class="form-select" required>
+                    <option value="">-- Chọn công việc --</option>
+                    {% for t in tasks %}
+                    <option value="{{ t.id }}">{{ t.code }} - {{ t.task_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label>Ngày Làm Việc</label>
+                    <input type="date" name="date" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label>Ca Làm Việc</label>
+                    <select name="shift" class="form-select" required>
+                        <option value="Sáng">Ca Sáng (07:30 - 11:30)</option>
+                        <option value="Chiều">Ca Chiều (13:00 - 17:00)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="/schedule" class="btn btn-secondary">Quay lại</a>
+                <button type="submit" class="btn btn-success">Lưu Phân Công</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
