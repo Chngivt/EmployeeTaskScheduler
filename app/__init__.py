@@ -28,18 +28,20 @@ def create_app():
 
         # --- TỰ ĐỘNG TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH ---
         admin_email = "caohoangviet738@gmail.com"
-        existing_admin = Employee.query.filter_by(email=admin_email).first()
+        existing_admin = Employee.query.filter(
+            (Employee.email == admin_email) | (Employee.code == "AD001")
+        ).first()
         if not existing_admin:
             admin_emp = Employee(
                 code="AD001",
                 fullname="Quản Trị Viên",
-                email=caohoangviet738@gmail.com,
+                email=admin_email,
                 phone="0909123456",
                 department="Quản trị",
                 position="Admin",
-                role="admin"  # Gán quyền admin
+                role="admin"
             )
-            admin_emp.set_password("admin123")  # Mật khẩu mặc định
+            admin_emp.set_password("admin123")
             db.session.add(admin_emp)
             db.session.commit()
             print("--> Đã tự động tạo tài khoản Admin mặc định thành công!")
