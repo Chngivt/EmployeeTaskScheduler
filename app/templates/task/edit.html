@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow-sm mx-auto" style="max-width: 600px;">
+    <div class="card-header bg-primary text-white"><h4>Sửa Công Việc</h4></div>
+    <div class="card-body">
+        <form action="/task/edit/{{ t.id }}" method="POST">
+            <div class="mb-3"><label>Mã CV</label><input type="text" name="code" class="form-control" value="{{ t.code }}" required></div>
+            <div class="mb-3"><label>Tên CV</label><input type="text" name="task_name" class="form-control" value="{{ t.task_name }}" required></div>
+            <div class="mb-3">
+                <label>Độ Ưu Tiên</label>
+                <select name="priority" class="form-select">
+                    <option value="1" {% if t.priority == 1 %}selected{% endif %}>Cao (1)</option>
+                    <option value="2" {% if t.priority == 2 %}selected{% endif %}>Trung bình (2)</option>
+                    <option value="3" {% if t.priority == 3 %}selected{% endif %}>Thấp (3)</option>
+                </select>
+            </div>
+            <div class="mb-3"><label>Thời Lượng (Giờ)</label><input type="number" name="duration" class="form-control" value="{{ t.duration }}" required></div>
+            <div class="d-flex justify-content-between">
+                <a href="/task" class="btn btn-secondary">Quay lại</a>
+                <button type="submit" class="btn btn-primary">Cập nhật</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

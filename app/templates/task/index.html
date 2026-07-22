@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Danh sách Công việc</h2>
+    <a href="/task/add" class="btn btn-success">+ Thêm Công Việc</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã CV</th>
+                    <th>Tên Công Việc</th>
+                    <th>Độ Ưu Tiên</th>
+                    <th>Thời Lượng (Giờ)</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tasks %}
+                <tr>
+                    <td>{{ t.code }}</td>
+                    <td>{{ t.task_name }}</td>
+                    <td>
+                        <!-- Hiển thị badge màu sắc tùy theo độ ưu tiên -->
+                        {% if t.priority == 1 %} <span class="badge bg-danger">Cao</span>
+                        {% elif t.priority == 2 %} <span class="badge bg-warning text-dark">Trung bình</span>
+                        {% else %} <span class="badge bg-info text-dark">Thấp</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ t.duration }}</td>
+                    <td>
+                        <a href="/task/edit/{{ t.id }}" class="btn btn-sm btn-primary">Sửa</a>
+                        <a href="/task/delete/{{ t.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa công việc này?');">Xóa</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">Chưa có công việc nào trong hệ thống.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -23,12 +23,15 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    # --- ĐĂNG KÝ CÁC BLUEPRINT Ở ĐÂY ---
+    # --- ĐĂNG KÝ CÁC BLUEPRINT TẠI ĐÂY (Chỉ đăng ký mỗi cái 1 lần) ---
     from app.routes.employee import employee_bp
     app.register_blueprint(employee_bp)
+    
+    from app.routes.task import task_bp
+    app.register_blueprint(task_bp)
 
     @app.route('/')
     def dashboard():
-        return "<h1>Hệ thống Employee Task Scheduler đã chạy thành công!</h1><a href='/employee'>Vào trang Nhân viên</a>"
+        return "<h1>Hệ thống Employee Task Scheduler đã chạy thành công!</h1><a href='/employee'>Nhân viên</a> | <a href='/task'>Công việc</a>"
 
     return app
