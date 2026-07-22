@@ -14,20 +14,21 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Đảm bảo thư mục 'instance' tồn tại để chứa file CSDL
     os.makedirs(app.instance_path, exist_ok=True)
 
-    # Import các models vào hệ thống
     from app.models.employee import Employee
     from app.models.task import Task
     from app.models.schedule import Schedule
 
-    # Tự động tạo file database.db nếu nó chưa tồn tại
     with app.app_context():
         db.create_all()
 
+    # --- ĐĂNG KÝ CÁC BLUEPRINT Ở ĐÂY ---
+    from app.routes.employee import employee_bp
+    app.register_blueprint(employee_bp)
+
     @app.route('/')
     def dashboard():
-        return "<h1>Hệ thống Employee Task Scheduler đã chạy thành công!</h1>"
+        return "<h1>Hệ thống Employee Task Scheduler đã chạy thành công!</h1><a href='/employee'>Vào trang Nhân viên</a>"
 
     return app

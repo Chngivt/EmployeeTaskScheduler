@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Danh sách Nhân viên</h2>
+    <!-- Nút Thêm nhân viên (hiện tại chưa có link, chúng ta làm ở bước sau) -->
+    <a href="/employee/add" class="btn btn-success">+ Thêm Nhân Viên</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã NV</th>
+                    <th>Họ Tên</th>
+                    <th>Email</th>
+                    <th>Phòng Ban</th>
+                    <th>Chức Vụ</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td>{{ emp.code }}</td>
+                    <td>{{ emp.fullname }}</td>
+                    <td>{{ emp.email }}</td>
+                    <td>{{ emp.department }}</td>
+                    <td>{{ emp.position }}</td>
+                    <td>
+                        <a href="/employee/edit/{{ emp.id }}" class="btn btn-sm btn-primary">Sửa</a>
+                       <a href="/employee/delete/{{ emp.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa nhân viên này?');">Xóa</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">Chưa có nhân viên nào trong hệ thống.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
