@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, render_template # <--- Thêm render_template ở đây
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from config import Config
@@ -23,7 +23,7 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    # --- ĐĂNG KÝ CÁC BLUEPRINT TẠI ĐÂY (Chỉ đăng ký mỗi cái 1 lần) ---
+    # --- ĐĂNG KÝ CÁC BLUEPRINT TẠI ĐÂY ---
     from app.routes.employee import employee_bp
     app.register_blueprint(employee_bp)
     
@@ -33,8 +33,21 @@ def create_app():
     from app.routes.schedule import schedule_bp
     app.register_blueprint(schedule_bp)
 
+    # --- ROUTE TRANG CHỦ (DASHBOARD) ---
     @app.route('/')
     def dashboard():
-        return "<h1>Hệ thống Employee Task Scheduler đã chạy thành công!</h1><a href='/employee'>Nhân viên</a> | <a href='/task'>Công việc</a> | <a href='/schedule'>Phân công</a>"
+        # Đếm tổng số lượng dữ liệu
+        total_emp = Employee.query.count()
+        total_task = Task.query.count()
+        total_schedule = Schedule.query.count()
+        
+        # Lấy toàn bộ lịch phân công để đổ ra bảng tuần
+        schedules_list = Schedule.query.all()
+        
+        return render_template('dashboard.html', 
+                               total_emp=total_emp, 
+                               total_task=total_task, 
+                               total_schedule=total_schedule,
+                               schedules=schedules_list)
 
     return app
