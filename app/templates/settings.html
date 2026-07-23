@@ -2,23 +2,73 @@
 
 {% block content %}
 <div class="mb-4">
-    <h4 class="fw-bold text-dark mb-1"><i class="bi bi-gear-fill text-secondary me-2"></i> Cài Đặt Hệ Thống</h4>
-    <small class="text-muted">Quản lý cấu hình chung và thông tin tài khoản</small>
+    <h4 class="fw-bold text-dark mb-1"><i class="bi bi-gear-fill text-secondary me-2"></i> Cài Đặt & Cấu Hình Hệ Thống</h4>
+    <small class="text-muted">Quản lý tài khoản cá nhân, thông báo email và các tùy chọn hệ thống</small>
 </div>
 
-<div class="card shadow-sm border-0 rounded-4 p-4 max-w-lg">
-    <h5 class="fw-bold mb-3">Thông tin tài khoản</h5>
-    <div class="mb-3">
-        <label class="form-label text-muted small">Người dùng hiện tại</label>
-        <input type="text" class="form-control" value="{{ session.get('fullname', '') }}" disabled>
+<div class="row g-4">
+    <!-- Cột trái: Đổi mật khẩu & Thông tin -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white mb-4">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person-badge text-primary me-2"></i>Thông tin tài khoản</h6>
+            <div class="mb-3">
+                <label class="form-label text-muted small">Họ và tên</label>
+                <input type="text" class="form-control form-control-sm" value="{{ session.get('fullname', '') }}" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-muted small">Vai trò</label>
+                <input type="text" class="form-control form-control-sm" value="{{ 'Quản trị viên (Admin)' if session.get('role') == 'admin' else 'Nhân viên' }}" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-muted small">Địa chỉ IP đăng nhập hiện tại</label>
+                <input type="text" class="form-control form-control-sm text-info fw-bold" value="{{ session.get('ip_address', '127.0.0.1') }}" readonly>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock text-danger me-2"></i>Đổi mật khẩu</h6>
+            <form action="#" method="POST">
+                <div class="mb-3">
+                    <label class="form-label small">Mật khẩu hiện tại</label>
+                    <input type="password" class="form-control form-control-sm" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small">Mật khẩu mới</label>
+                    <input type="password" class="form-control form-control-sm" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4">Cập nhật mật khẩu</button>
+            </form>
+        </div>
     </div>
-    <div class="mb-3">
-        <label class="form-label text-muted small">Vai trò</label>
-        <input type="text" class="form-control" value="{{ session.get('role', 'employee') }}" disabled>
-    </div>
-    <div class="mb-3">
-        <label class="form-label text-muted small">Địa chỉ IP đăng nhập</label>
-        <input type="text" class="form-control text-info fw-bold" value="{{ session.get('ip_address', 'N/A') }}" disabled>
+
+    <!-- Cột phải: Cấu hình thông báo & Ca làm việc -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white mb-4">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-bell text-warning me-2"></i>Cài đặt thông báo</h6>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="emailNoti" checked>
+                <label class="form-check-label small" for="emailNoti">Gửi email xác nhận khi đăng ký ca làm mới</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="reminderNoti" checked>
+                <label class="form-check-label small" for="reminderNoti">Nhắc nhở lịch làm trước 1 giờ</label>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-success me-2"></i>Khung giờ ca làm việc</h6>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-content d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span>Ca Sáng:</span> <strong>07:30 - 11:30</strong>
+                </li>
+                <li class="list-group-content d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span>Ca Chiều:</span> <strong>13:00 - 17:00</strong>
+                </li>
+                <li class="list-group-content d-flex justify-content-between align-items-center py-2">
+                    <span>Ca Tối:</span> <strong>18:00 - 21:00</strong>
+                </li>
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}
