@@ -9,26 +9,32 @@ from app.routes.auth import login_required
 
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
+# --- 1. TRANG QUẢN LÝ PHÂN CÔNG (DẠNG DANH SÁCH / BẢNG CHI TIẾT) ---
 @schedule_bp.route('/')
 @login_required
 def index():
+    schedules = Schedule.query.order_by(Schedule.date.desc()).all()
+    employees = Employee.query.all()
+    tasks = Task.query.all()
+    return render_template('schedule/index.html', schedules=schedules, employees=employees, tasks=tasks)
+
+# --- 2. TRANG LỊCH TUẦN (DẠNG MA TRẬN CLICK ĐĂNG KÝ) ---
+@schedule_bp.route('/weekly')
+@login_required
+def weekly():
     today = datetime.now().date()
-    # Tính từ Thứ Hai đầu tuần
     start_of_week = today - timedelta(days=today.weekday())
-    
-    # Tạo danh sách 7 ngày trong tuần (Thứ 2 đến Chủ Nhật)
     week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
     
     employees = Employee.query.all()
     schedules = Schedule.query.all()
     tasks = Task.query.all()
     
-    # Tạo dictionary lưu trữ lịch: key là (employee_id, date, shift) -> value là schedule object
     schedule_dict = {}
     for s in schedules:
-        schedule_dict[(s.employee_id, s.date, s.shift)] = s
+        schedule_dict[(s.employee_id, s.date, s.shift)] = s.task.task_name if s.task else ''
             
-    return render_template('schedule/index.html', 
+    return render_template('schedule/weekly.html', 
                            employees=employees,
                            week_dates=week_dates,
                            schedule_dict=schedule_dict,
@@ -43,10 +49,8 @@ def add():
         date_str = request.form.get('date')
         shift = request.form.get('shift')
 
-        # Chuyển đổi chuỗi ngày từ Form (YYYY-MM-DD) thành đối tượng Date của Python
         date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
 
-        # LOGIC KIỂM TRA TRÙNG LỊCH: Xem nhân viên này đã có lịch trong ca và ngày này chưa
         conflict = Schedule.query.filter_by(
             employee_id=employee_id, 
             date=date_obj, 
@@ -54,13 +58,11 @@ def add():
         ).first()
         
         if conflict:
-            # Nếu phát hiện trùng, trả về form kèm thông báo lỗi
             error_msg = f"Lỗi: Nhân viên này đã được đăng ký ca {shift} vào ngày {date_str} rồi!"
             employees = Employee.query.all()
             tasks = Task.query.all()
             return render_template('schedule/add.html', employees=employees, tasks=tasks, error=error_msg)
 
-        # Nếu không trùng, tiến hành lưu vào Database
         new_schedule = Schedule(
             employee_id=employee_id, 
             task_id=task_id, 
@@ -70,59 +72,11 @@ def add():
         db.session.add(new_schedule)
         db.session.commit()
         
-        # Tự động quay về trang vừa thực hiện phân công (Dashboard hoặc Lịch phân công)
         return redirect(request.referrer or url_for('schedule.index'))
 
-    # Nếu là GET request, lấy dữ liệu nhân viên & công việc truyền sang giao diện
     employees = Employee.query.all()
     tasks = Task.query.all()
     return render_template('schedule/add.html', employees=employees, tasks=tasks)
-
-@schedule_bp.route('/register', methods=['POST'])
-@login_required
-def register():
-    try:
-        data = request.get_json()
-        employee_id = data.get('employee_id')
-        task_id = data.get('task_id')
-        date_str = data.get('date')
-        shift = data.get('shift')
-
-        # Chuyển đổi chuỗi ngày
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-
-        # Kiểm tra xem ca này đã có người chưa
-        existing = Schedule.query.filter_by(
-            employee_id=employee_id,
-            date=date_obj,
-            shift=shift
-        ).first()
-
-        if existing:
-            return jsonify({'success': False, 'message': 'Nhân viên này đã đăng ký ca này rồi!'})
-
-        # Kiểm tra xem ca này có người khác đã đăng ký chưa
-        shift_occupied = Schedule.query.filter_by(
-            date=date_obj,
-            shift=shift
-        ).first()
-
-        if shift_occupied:
-            return jsonify({'success': False, 'message': 'Đã có người đăng ký ca này rồi!'})
-
-        # Tạo phân công mới
-        new_schedule = Schedule(
-            employee_id=employee_id,
-            task_id=task_id,
-            date=date_obj,
-            shift=shift
-        )
-        db.session.add(new_schedule)
-        db.session.commit()
-
-        return jsonify({'success': True, 'message': 'Đăng ký ca thành công!', 'schedule_id': new_schedule.id})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
 
 @schedule_bp.route('/delete/<int:id>')
 @login_required
