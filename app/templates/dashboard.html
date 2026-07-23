@@ -75,6 +75,7 @@
             </div>
             <div class="card-body p-4">
                 <form action="/schedule/add" method="POST">
+                    <!-- Chọn Nhân viên -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Nhân viên</label>
                         <select name="employee_id" class="form-select form-select-sm" required>
@@ -85,6 +86,7 @@
                         </select>
                     </div>
 
+                    <!-- Chọn Công việc -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Công việc</label>
                         <select name="task_id" class="form-select form-select-sm" required>
@@ -95,11 +97,13 @@
                         </select>
                     </div>
 
+                    <!-- Ngày làm việc -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Ngày làm việc</label>
                         <input type="date" name="date" class="form-control form-control-sm" required>
                     </div>
 
+                    <!-- Ca làm việc -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold small d-block">Ca làm việc</label>
                         <div class="form-check mb-2">
