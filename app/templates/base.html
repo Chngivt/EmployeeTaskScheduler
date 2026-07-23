@@ -146,7 +146,10 @@
                     <i class="bi bi-person-circle fs-4 me-2 text-primary"></i>
                     <div>
                         <strong class="d-block" style="font-size: 13px;">{{ session.get('fullname') }}</strong>
-                        <small class="text-muted" style="font-size: 11px;">{{ 'Quản trị viên' if session.get('role') == 'admin' else 'Nhân viên' }}</small>
+                        <small class="text-muted d-block" style="font-size: 11px;">{{ 'Quản trị viên' if session.get('role') == 'admin' else 'Nhân viên' }}</small>
+                        <!-- --- ĐOẠN HIỂN THỊ ĐỊA CHỈ IP --- -->
+                        <small class="text-info d-block" style="font-size: 10px;"><i class="bi bi-globe me-1"></i>IP: {{ session.get('ip_address', 'N/A') }}</small>
+                        <!-- -------------------------------- -->
                     </div>
                 </div>
                 <a href="/logout" class="text-danger" title="Đăng xuất"><i class="bi bi-box-arrow-right fs-5"></i></a>
@@ -181,6 +184,10 @@
         setInterval(() => {
             const now = new Date();
             document.getElementById('current-time').innerText = now.toLocaleTimeString() + ' - ' + now.toLocaleDateString();
+        }, 1000);
+    </script>
+</body>
+</html>me').innerText = now.toLocaleTimeString() + ' - ' + now.toLocaleDateString();
         }, 1000);
     </script>
 </body>
