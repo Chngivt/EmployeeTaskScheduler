@@ -47,7 +47,7 @@ def weekly():
                            schedule_dict=schedule_dict,
                            tasks=tasks)
 
-# --- 3. XỬ LÝ THÊM/ĐĂNG KÝ PHÂN CÔNG ---
+# --- 3. XỬ LÝ THÊM/ĐĂNG KÝ PHÂN CÔNG (ĐÃ SỬA ĐOẠN NÀY) ---
 @schedule_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
@@ -69,7 +69,12 @@ def add():
                 shift=shift
             ).first()
             
-            if not conflict:
+            # ================= ĐỌAN ĐÃ SỬA =================
+            if conflict:
+                # Nếu đã có phân công sẵn -> Cập nhật lại công việc mới
+                conflict.task_id = int(task_id)
+            else:
+                # Nếu chưa có -> Tạo phân công mới
                 new_schedule = Schedule(
                     employee_id=int(employee_id), 
                     task_id=int(task_id), 
@@ -77,10 +82,12 @@ def add():
                     shift=shift
                 )
                 db.session.add(new_schedule)
-                db.session.commit()
+
+            db.session.commit()
+            # ===============================================
         except Exception as e:
             db.session.rollback()
-            print(f"Lỗi khi thêm phân công: {e}")
+            print(f"Lỗi khi thêm/cập nhật phân công: {e}")
 
         return redirect(request.referrer or url_for('schedule.weekly'))
 
