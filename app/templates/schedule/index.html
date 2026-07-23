@@ -1,277 +1,78 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row g-4">
-    <div class="col-lg-12">
-        <div class="card border-0 rounded-4">
-            <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-calendar-week text-primary me-2"></i> Lịch Phân Công Tuần</h5>
-                    <small class="text-muted">Nhân viên có thể click vào ô để đăng ký ca làm việc</small>
-                </div>
-                <div class="badge bg-light text-dark border px-3 py-2 fw-normal">
-                    {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-bordered mb-0 align-middle text-center" style="font-size: 13px;">
-                        <thead>
-                            <tr>
-                                <th style="width: 120px;" class="py-3 text-start ps-4">Nhân Viên</th>
-                                {% set day_names = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'] %}
-                                {% for d in week_dates %}
-                                <th class="py-3 text-center" style="width: 150px;">
-                                    <div class="fw-bold">{{ day_names[loop.index0] }}</div>
-                                    <small class="text-muted fw-normal" style="font-size: 11px;">{{ d.strftime('%d/%m') }}</small>
-                                </th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if employees %}
-                                {% for emp in employees %}
-                                <tr>
-                                    <td class="text-start ps-4 py-3 bg-white">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 32px; height: 32px; font-size: 12px;">
-                                                {{ emp.fullname[0]|upper }}
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0 fw-bold text-dark" style="font-size: 12px;">{{ emp.fullname }}</h6>
-                                                <small class="text-muted" style="font-size: 10px;">{{ emp.code }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    {% for d in week_dates %}
-                                    <td class="p-1" style="background-color: #fafbfc; vertical-align: top;">
-                                        {% set shifts = ['Sáng', 'Chiều', 'Tối'] %}
-                                        {% set shift_colors = {'Sáng': 'primary', 'Chiều': 'warning', 'Tối': 'dark'} %}
-                                        {% for shift in shifts %}
-                                            {% set schedule_key = (emp.id, d, shift) %}
-                                            {% set has_schedule = schedule_key in schedule_dict %}
-                                            <div class="schedule-slot p-2 mb-1 rounded border text-start" 
-                                                 style="min-height: 45px; background-color: white; cursor: {% if not has_schedule %}pointer{% else %}default{% endif %}; transition: all 0.2s; border-color: #e2e8f0;"
-                                                 data-employee-id="{{ emp.id }}"
-                                                 data-employee-name="{{ emp.fullname }}"
-                                                 data-employee-code="{{ emp.code }}"
-                                                 data-date="{{ d.strftime('%Y-%m-%d') }}"
-                                                 data-shift="{{ shift }}"
-                                                 data-booked="{% if has_schedule %}true{% else %}false{% endif %}">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <span class="badge bg-{{ shift_colors[shift] }} {% if has_schedule %}text-white{% else %}bg-opacity-10 text-dark{% endif %} fw-bold" style="font-size: 9px;">{{ shift }}</span>
-                                                </div>
-                                                <div class="text-dark fw-semibold text-truncate" style="font-size: 11px;">
-                                                    {% if has_schedule %}
-                                                        <i class="bi bi-check-circle-fill text-success me-1"></i>
-                                                        <span title="{{ schedule_dict[schedule_key].task.task_name }}">{{ schedule_dict[schedule_key].task.task_name|truncate(12) }}</span>
-                                                    {% else %}
-                                                        <i class="bi bi-plus-circle text-muted"></i>
-                                                        <span class="text-muted">Click để đăng ký</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    </td>
-                                    {% endfor %}
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="8" class="text-muted py-5 text-center">Chưa có nhân viên nào trong hệ thống. Hãy thêm nhân viên để hiển thị bảng lịch!</td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold text-dark mb-1"><i class="bi bi-card-checklist text-primary me-2"></i> Quản Lý Danh Sách Phân Công</h4>
+        <small class="text-muted">Danh sách tất cả các ca làm việc đã được phân công trong hệ thống</small>
     </div>
+    <a href="/schedule/weekly" class="btn btn-primary shadow-sm rounded-pill px-3">
+        <i class="bi bi-calendar3 me-1"></i> Xem dạng Bảng Lịch tuần
+    </a>
 </div>
 
-<!-- Modal đăng ký ca làm -->
-<div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4">
-            <div class="modal-header bg-primary bg-opacity-10 border-0">
-                <h5 class="modal-title fw-bold">Đăng Ký Ca Làm Việc</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Nhân Viên</label>
-                    <input type="text" id="modalEmployeeName" class="form-control" disabled>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Ca Làm & Ngày</label>
-                    <input type="text" id="modalShiftDate" class="form-control" disabled>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Chọn Công Việc <span class="text-danger">*</span></label>
-                    <select id="taskSelect" class="form-select" required>
-                        <option value="">-- Chọn công việc --</option>
-                        {% for task in tasks %}
-                        <option value="{{ task.id }}">{{ task.code }} - {{ task.task_name }}</option>
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center" style="font-size: 13px;">
+                <thead class="table-light">
+                    <tr>
+                        <th class="py-3 text-start ps-4">STT</th>
+                        <th class="py-3 text-start">Nhân viên</th>
+                        <th class="py-3">Ngày làm việc</th>
+                        <th class="py-3">Ca làm</th>
+                        <th class="py-3 text-start">Công việc</th>
+                        <th class="py-3 text-end pe-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if schedules %}
+                        {% for s in schedules %}
+                        <tr>
+                            <td class="text-start ps-4 text-muted">{{ loop.index }}</td>
+                            <td class="text-start fw-bold text-dark">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 32px; height: 32px; font-size: 12px;">
+                                        {{ s.employee.fullname[0]|upper if s.employee else 'N' }}
+                                    </div>
+                                    <div>
+                                        <div>{{ s.employee.fullname if s.employee else 'N/A' }}</div>
+                                        <small class="text-muted font-normal" style="font-size: 11px;">{{ s.employee.code if s.employee else '' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border px-2 py-1 fw-semibold">
+                                    {{ s.date.strftime('%d/%m/%Y') }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if s.shift == 'Sáng' %}
+                                    <span class="badge bg-primary bg-opacity-15 text-primary px-2 py-1">Ca Sáng</span>
+                                {% elif s.shift == 'Chiều' %}
+                                    <span class="badge bg-warning bg-opacity-25 text-dark px-2 py-1">Ca Chiều</span>
+                                {% else %}
+                                    <span class="badge bg-dark text-white px-2 py-1">Ca Tối</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-start fw-semibold text-secondary">
+                                {{ s.task.task_name if s.task else 'Không xác định' }}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="/schedule/delete/{{ s.id }}" class="btn btn-outline-danger btn-sm rounded-circle p-1 px-2" onclick="return confirm('Bạn có chắc muốn xóa phân công này?')" title="Xóa">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
                         {% endfor %}
-                    </select>
-                </div>
-                <div id="modalAlert" class="alert d-none" role="alert"></div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="submitRegister()">Đăng Ký</button>
-            </div>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-muted py-5 text-center">Chưa có lịch phân công nào.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
-
-<script>
-let currentRegister = { employeeId: null, employeeName: null, employeeCode: null, date: null, shift: null };
-const registerModal = new bootstrap.Modal(document.getElementById('registerModal'), { backdrop: 'static', keyboard: false });
-
-// Event delegation - bắt sự kiện click trên tất cả schedule slots
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.schedule-slot').forEach(slot => {
-        slot.addEventListener('click', function() {
-            if (this.dataset.booked === 'true') {
-                showNotification('Ca này đã có người đăng ký rồi!', 'info');
-                return;
-            }
-            
-            openRegisterModal(
-                this.dataset.employeeId,
-                this.dataset.employeeName,
-                this.dataset.employeeCode,
-                this.dataset.date,
-                this.dataset.shift
-            );
-        });
-        
-        // Hover effect cho slot chưa book
-        if (slot.dataset.booked !== 'true') {
-            slot.addEventListener('mouseenter', function() {
-                this.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.25)';
-                this.style.backgroundColor = '#f0f7ff';
-                this.style.borderColor = '#3b82f6';
-                this.style.transform = 'translateY(-2px)';
-            });
-            
-            slot.addEventListener('mouseleave', function() {
-                this.style.boxShadow = 'none';
-                this.style.backgroundColor = 'white';
-                this.style.borderColor = '#e2e8f0';
-                this.style.transform = 'translateY(0)';
-            });
-        }
-    });
-});
-
-function openRegisterModal(employeeId, employeeName, employeeCode, date, shift) {
-    currentRegister = { employeeId, employeeName, employeeCode, date, shift };
-    
-    document.getElementById('modalEmployeeName').value = employeeName + ' (' + employeeCode + ')';
-    const dateObj = new Date(date + 'T00:00:00');
-    document.getElementById('modalShiftDate').value = shift + ' - ' + dateObj.toLocaleDateString('vi-VN');
-    document.getElementById('taskSelect').value = '';
-    document.getElementById('modalAlert').classList.add('d-none');
-    
-    registerModal.show();
-    document.getElementById('taskSelect').focus();
-}
-
-function submitRegister() {
-    const taskId = document.getElementById('taskSelect').value;
-    if (!taskId) {
-        showAlert('Vui lòng chọn công việc!', 'warning');
-        return;
-    }
-    
-    const registerBtn = event.target;
-    registerBtn.disabled = true;
-    registerBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
-    
-    fetch('/schedule/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            employee_id: currentRegister.employeeId,
-            task_id: taskId,
-            date: currentRegister.date,
-            shift: currentRegister.shift
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            registerModal.hide();
-            showNotification('✓ Đăng ký thành công!', 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        } else {
-            showAlert(data.message, 'danger');
-            registerBtn.disabled = false;
-            registerBtn.innerHTML = 'Đăng Ký';
-        }
-    })
-    .catch(err => {
-        showAlert('Lỗi: ' + err.message, 'danger');
-        registerBtn.disabled = false;
-        registerBtn.innerHTML = 'Đăng Ký';
-    });
-}
-
-function showAlert(message, type) {
-    const alertDiv = document.getElementById('modalAlert');
-    alertDiv.className = 'alert alert-' + type + ' d-block';
-    alertDiv.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + message;
-}
-
-function showNotification(message, type = 'info') {
-    const alertClass = type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : 'bg-info';
-    const html = `
-        <div class="toast align-items-center text-white ${alertClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `;
-    
-    const container = document.getElementById('notificationContainer') || createNotificationContainer();
-    const toastElement = document.createElement('div');
-    toastElement.innerHTML = html;
-    container.appendChild(toastElement);
-    
-    const toast = new bootstrap.Toast(toastElement.querySelector('.toast'));
-    toast.show();
-    
-    setTimeout(() => toastElement.remove(), 5000);
-}
-
-function createNotificationContainer() {
-    const container = document.createElement('div');
-    container.id = 'notificationContainer';
-    container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
-    document.body.appendChild(container);
-    return container;
-}
-</script>
-
-<style>
-.schedule-slot {
-    border-color: #e2e8f0 !important;
-}
-.schedule-slot[data-booked="true"] {
-    background-color: #ecfdf5 !important;
-    border-color: #10b981 !important;
-}
-.schedule-slot[data-booked="true"]:hover {
-    cursor: not-allowed;
-    opacity: 0.8;
-}
-</style>
 {% endblock %}
