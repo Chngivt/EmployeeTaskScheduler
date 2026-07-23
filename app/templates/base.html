@@ -120,6 +120,7 @@
 </head>
 <body>
     <div class="sidebar d-flex flex-column p-3">
+        <!-- Logo & Tên ứng dụng -->
         <div class="d-flex align-items-center mb-4 px-2 pt-2">
             <div class="rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 44px; height: 44px; background: linear-gradient(135deg, #2563eb, #38bdf8);">
                 <i class="bi bi-calendar-check-fill fs-4 text-white"></i>
@@ -131,11 +132,56 @@
         </div>
         <hr class="text-secondary opacity-25">
 
+        <!-- DANH SÁCH MENU SIDEBAR CHUẨN MẪU BÊN TRÁI -->
         <ul class="nav nav-pills flex-column mb-auto">
-            <li class="nav-item mb-1"><a href="/" class="nav-link{% if request.path == '/' %} active{% endif %}"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a></li>
-            <li class="nav-item mb-1"><a href="/employee" class="nav-link{% if request.path.startswith('/employee') %} active{% endif %}"><i class="bi bi-people-fill me-2"></i> Nhân viên</a></li>
-            <li class="nav-item mb-1"><a href="/task" class="nav-link{% if request.path.startswith('/task') %} active{% endif %}"><i class="bi bi-card-checklist me-2"></i> Công việc</a></li>
-            <li class="nav-item mb-1"><a href="/schedule" class="nav-link{% if request.path.startswith('/schedule') %} active{% endif %}"><i class="bi bi-calendar-week-fill me-2"></i> Phân công</a></li>
+            <!-- 1. Dashboard -->
+            <li class="nav-item mb-1">
+                <a href="/" class="nav-link{% if request.path == '/' %} active{% endif %}">
+                    <i class="bi bi-house-door-fill me-2"></i> Dashboard
+                </a>
+            </li>
+            
+            <!-- 2. Nhân viên -->
+            <li class="nav-item mb-1">
+                <a href="/employee" class="nav-link{% if request.path.startswith('/employee') %} active{% endif %}">
+                    <i class="bi bi-people-fill me-2"></i> Nhân viên
+                </a>
+            </li>
+            
+            <!-- 3. Công việc -->
+            <li class="nav-item mb-1">
+                <a href="/task" class="nav-link{% if request.path.startswith('/task') %} active{% endif %}">
+                    <i class="bi bi-list-task me-2"></i> Công việc
+                </a>
+            </li>
+            
+            <!-- 4. Phân công -->
+            <li class="nav-item mb-1">
+                <a href="/schedule" class="nav-link{% if request.path == '/schedule' %} active{% endif %}">
+                    <i class="bi bi-calendar-check me-2"></i> Phân công
+                </a>
+            </li>
+            
+            <!-- 5. Lịch tuần -->
+            <li class="nav-item mb-1">
+                <a href="/schedule" class="nav-link{% if request.path.startswith('/weekly') %} active{% endif %}">
+                    <i class="bi bi-calendar3 me-2"></i> Lịch tuần
+                </a>
+            </li>
+
+            <!-- 6. Báo cáo -->
+            <li class="nav-item mb-1">
+                <a href="/report" class="nav-link{% if request.path.startswith('/report') %} active{% endif %}">
+                    <i class="bi bi-graph-up me-2"></i> Báo cáo
+                </a>
+            </li>
+
+            <!-- 7. Cài đặt -->
+            <li class="nav-item mb-1">
+                <a href="/settings" class="nav-link{% if request.path.startswith('/settings') %} active{% endif %}">
+                    <i class="bi bi-gear-fill me-2"></i> Cài đặt
+                </a>
+            </li>
         </ul>
 
         <hr class="text-secondary opacity-25">
@@ -147,9 +193,7 @@
                     <div>
                         <strong class="d-block" style="font-size: 13px;">{{ session.get('fullname') }}</strong>
                         <small class="text-muted d-block" style="font-size: 11px;">{{ 'Quản trị viên' if session.get('role') == 'admin' else 'Nhân viên' }}</small>
-                        <!-- --- ĐOẠN HIỂN THỊ ĐỊA CHỈ IP --- -->
                         <small class="text-info d-block" style="font-size: 10px;"><i class="bi bi-globe me-1"></i>IP: {{ session.get('ip_address', 'N/A') }}</small>
-                        <!-- -------------------------------- -->
                     </div>
                 </div>
                 <a href="/logout" class="text-danger" title="Đăng xuất"><i class="bi bi-box-arrow-right fs-5"></i></a>
@@ -184,10 +228,6 @@
         setInterval(() => {
             const now = new Date();
             document.getElementById('current-time').innerText = now.toLocaleTimeString() + ' - ' + now.toLocaleDateString();
-        }, 1000);
-    </script>
-</body>
-</html>me').innerText = now.toLocaleTimeString() + ' - ' + now.toLocaleDateString();
         }, 1000);
     </script>
 </body>
