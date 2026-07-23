@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from functools import wraps
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session
 from werkzeug.utils import secure_filename
 from app import db
 from app.models.employee import Employee
@@ -13,16 +14,28 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# --- 1. DANH SÁCH NHÂN VIÊN ---
+# --- DECORATOR KIỂM TRA QUYỀN ADMIN ---
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Kiểm tra role trong session
+        if session.get('role') != 'admin':
+            flash('Chỉ Quản trị viên (Admin) mới có quyền thực hiện thao tác này!', 'danger')
+            return redirect(url_for('employee.index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# --- 1. DANH SÁCH NHÂN VIÊN (AI CŨNG XEM ĐƯỢC) ---
 @employee_bp.route('/')
 @login_required
 def index():
     employees = Employee.query.order_by(Employee.id.desc()).all()
     return render_template('employee/index.html', employees=employees)
 
-# --- 2. THÊM NHÂN VIÊN MỚI ---
+# --- 2. THÊM NHÂN VIÊN MỚI (CHỈ ADMIN) ---
 @employee_bp.route('/add', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def add():
     if request.method == 'POST':
         code = request.form.get('code')
@@ -70,9 +83,10 @@ def add():
 
     return render_template('employee/add.html')
 
-# --- 3. CHỈNH SỬA NHÂN VIÊN (ĐÃ SỬA CHUẨN ĐẦY ĐỦ LOGIC) ---
+# --- 3. CHỈNH SỬA NHÂN VIÊN (CHỈ ADMIN) ---
 @employee_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def edit(id):
     emp = Employee.query.get_or_404(id)
 
@@ -85,12 +99,10 @@ def edit(id):
         role = request.form.get('role', 'employee')
         new_password = request.form.get('password')
 
-        # Kiểm tra xem Email mới có bị trùng với nhân viên khác trong hệ thống không
         existing_email = Employee.query.filter(Employee.email == email, Employee.id != id).first()
         if existing_email:
             return render_template('employee/edit.html', emp=emp, error="Email này đã được sử dụng bởi nhân viên khác!")
 
-        # Cập nhật thông tin
         emp.fullname = fullname
         emp.email = email
         emp.phone = phone
@@ -98,11 +110,9 @@ def edit(id):
         emp.position = position
         emp.role = role
 
-        # Xử lý đổi mật khẩu nếu người dùng có nhập mật khẩu mới
         if new_password and new_password.strip():
             emp.set_password(new_password.strip())
 
-        # Xử lý upload ảnh đại diện mới
         if 'avatar' in request.files:
             file = request.files['avatar']
             if file and file.filename != '' and allowed_file(file.filename):
@@ -123,12 +133,12 @@ def edit(id):
             db.session.rollback()
             return render_template('employee/edit.html', emp=emp, error=f"Lỗi lưu CSDL: {e}")
 
-    # TRUYỀN ĐÚNG BIẾN 'emp' TƯƠNG THÍCH HOÀN HẢO VỚI FILE edit.html
     return render_template('employee/edit.html', emp=emp)
 
-# --- 4. XÓA NHÂN VIÊN ---
+# --- 4. XÓA NHÂN VIÊN (CHỈ ADMIN) ---
 @employee_bp.route('/delete/<int:id>')
 @login_required
+@admin_required
 def delete(id):
     emp = Employee.query.get_or_404(id)
     db.session.delete(emp)
