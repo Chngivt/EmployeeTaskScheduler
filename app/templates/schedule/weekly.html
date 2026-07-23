@@ -51,9 +51,20 @@
                         <tr>
                             <td class="text-start ps-3 py-3 bg-white">
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 32px; height: 32px; font-size: 12px;">
-                                        {{ emp.fullname[0]|upper }}
-                                    </div>
+                                    <!-- ================= HOÀN THIỆN ĐOẠN HIỂN THỊ AVATAR Ở ĐÂY ================= -->
+                                    {% if emp.avatar %}
+                                        <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}"
+                                             alt="{{ emp.fullname }}"
+                                             class="rounded-circle me-2 border shadow-sm"
+                                             style="width: 32px; height: 32px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 32px; height: 32px; font-size: 12px;">
+                                            {{ emp.fullname[0]|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <!-- ========================================================================= -->
+
+
                                     <div class="text-truncate" style="max-width: 110px;">
                                         <h6 class="mb-0 fw-bold text-dark text-truncate" style="font-size: 12px;" title="{{ emp.fullname }}">{{ emp.fullname }}</h6>
                                         <small class="text-muted" style="font-size: 10px;">{{ emp.code }}</small>
