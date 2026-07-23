@@ -70,21 +70,39 @@ def add():
 
     return render_template('employee/add.html')
 
-# --- 3. CHỈNH SỬA NHÂN VIÊN (TÍNH NĂNG MỚI) ---
+# --- 3. CHỈNH SỬA NHÂN VIÊN (ĐÃ SỬA CHUẨN ĐẦY ĐỦ LOGIC) ---
 @employee_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
     emp = Employee.query.get_or_404(id)
 
     if request.method == 'POST':
-        emp.code = request.form.get('code')
-        emp.fullname = request.form.get('fullname')
-        emp.email = request.form.get('email')
-        emp.phone = request.form.get('phone')
-        emp.department = request.form.get('department')
-        emp.position = request.form.get('position')
+        fullname = request.form.get('fullname')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        department = request.form.get('department')
+        position = request.form.get('position')
+        role = request.form.get('role', 'employee')
+        new_password = request.form.get('password')
 
-        # Kiểm tra nếu có cập nhật ảnh đại diện mới
+        # Kiểm tra xem Email mới có bị trùng với nhân viên khác trong hệ thống không
+        existing_email = Employee.query.filter(Employee.email == email, Employee.id != id).first()
+        if existing_email:
+            return render_template('employee/edit.html', emp=emp, error="Email này đã được sử dụng bởi nhân viên khác!")
+
+        # Cập nhật thông tin
+        emp.fullname = fullname
+        emp.email = email
+        emp.phone = phone
+        emp.department = department
+        emp.position = position
+        emp.role = role
+
+        # Xử lý đổi mật khẩu nếu người dùng có nhập mật khẩu mới
+        if new_password and new_password.strip():
+            emp.set_password(new_password.strip())
+
+        # Xử lý upload ảnh đại diện mới
         if 'avatar' in request.files:
             file = request.files['avatar']
             if file and file.filename != '' and allowed_file(file.filename):
@@ -96,13 +114,17 @@ def edit(id):
                 os.makedirs(upload_dir, exist_ok=True)
                 file.save(os.path.join(upload_dir, avatar_filename))
 
-                # Đổi tên avatar cũ thành mới
                 emp.avatar = avatar_filename
 
-        db.session.commit()
-        return redirect(url_for('employee.index'))
+        try:
+            db.session.commit()
+            return redirect(url_for('employee.index'))
+        except Exception as e:
+            db.session.rollback()
+            return render_template('employee/edit.html', emp=emp, error=f"Lỗi lưu CSDL: {e}")
 
-    return render_template('employee/edit.html', employee=emp)
+    # TRUYỀN ĐÚNG BIẾN 'emp' TƯƠNG THÍCH HOÀN HẢO VỚI FILE edit.html
+    return render_template('employee/edit.html', emp=emp)
 
 # --- 4. XÓA NHÂN VIÊN ---
 @employee_bp.route('/delete/<int:id>')
