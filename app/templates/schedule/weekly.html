@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .shift-box-clickable {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .shift-box-clickable:hover {
+        border-color: #2563eb !important;
+        background-color: #eff6ff !important;
+        transform: translateY(-1px);
+    }
+</style>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-calendar3 text-primary me-2"></i> Lịch Phân Công Tuần</h5>
+            <small class="text-muted">Nhấp trực tiếp vào ô trống để đăng ký phân công ca làm việc</small>
+        </div>
+        <div class="badge bg-light text-dark border px-3 py-2 fw-normal rounded-pill">
+            {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered mb-0 align-middle text-center" style="font-size: 12px;">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 170px;" class="py-3 text-start ps-3">Nhân viên</th>
+                        {% set day_names = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'] %}
+                        {% for d in week_dates %}
+                        <th class="py-3">
+                            <div class="fw-bold">{{ day_names[loop.index0] }}</div>
+                            <small class="text-muted fw-normal" style="font-size: 10px;">{{ d.strftime('%d/%m') }}</small>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if employees %}
+                        {% for emp in employees %}
+                        <tr>
+                            <td class="text-start ps-3 py-3 bg-white">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 32px; height: 32px; font-size: 12px;">
+                                        {{ emp.fullname[0]|upper }}
+                                    </div>
+                                    <div class="text-truncate" style="max-width: 110px;">
+                                        <h6 class="mb-0 fw-bold text-dark text-truncate" style="font-size: 12px;" title="{{ emp.fullname }}">{{ emp.fullname }}</h6>
+                                        <small class="text-muted" style="font-size: 10px;">{{ emp.code }}</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            {% for d in week_dates %}
+                            <td class="p-1" style="background-color: #fafbfc; vertical-align: top;">
+                                <!-- Ca Sáng -->
+                                {% set task_sang = schedule_dict.get((emp.id, d, 'Sáng')) %}
+                                {% if task_sang %}
+                                <div class="p-1 mb-1 rounded border text-start bg-primary bg-opacity-10 border-primary-subtle shadow-sm" style="min-height: 42px;">
+                                    <span class="badge bg-primary text-white fw-bold" style="font-size: 8px;">Sáng</span>
+                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_sang }}">{{ task_sang }}</div>
+                                </div>
+                                {% else %}
+                                <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Sáng')">
+                                    <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Sáng</span>
+                                    <div class="text-muted mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Ca Chiều -->
+                                {% set task_chieu = schedule_dict.get((emp.id, d, 'Chiều')) %}
+                                {% if task_chieu %}
+                                <div class="p-1 mb-1 rounded border text-start bg-warning bg-opacity-10 border-warning-subtle shadow-sm" style="min-height: 42px;">
+                                    <span class="badge bg-warning text-dark fw-bold" style="font-size: 8px;">Chiều</span>
+                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_chieu }}">{{ task_chieu }}</div>
+                                </div>
+                                {% else %}
+                                <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Chiều')">
+                                    <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Chiều</span>
+                                    <div class="text-muted mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Ca Tối -->
+                                {% set task_toi = schedule_dict.get((emp.id, d, 'Tối')) %}
+                                {% if task_toi %}
+                                <div class="p-1 rounded border text-start bg-dark bg-opacity-10 border-secondary-subtle shadow-sm" style="min-height: 42px;">
+                                    <span class="badge bg-dark text-white fw-bold" style="font-size: 8px;">Tối</span>
+                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_toi }}">{{ task_toi }}</div>
+                                </div>
+                                {% else %}
+                                <div class="p-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Tối')">
+                                    <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Tối</span>
+                                    <div class="text-muted mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
+                                </div>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-muted py-5 text-center">Chưa có nhân viên nào trong hệ thống.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Đăng Ký Ca -->
+<div class="modal fade" id="quickRegisterModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold fs-6"><i class="bi bi-calendar-plus me-2"></i>Phân Công Ca Làm Việc</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/schedule/add" method="POST">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="employee_id" id="modal_employee_id">
+                    <input type="hidden" name="date" id="modal_date">
+                    <input type="hidden" name="shift" id="modal_shift">
+
+                    <div class="p-3 mb-3 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Nhân viên:</span>
+                            <strong class="text-dark small" id="modal_emp_name_display">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Ngày phân công:</span>
+                            <strong class="text-primary small" id="modal_date_display">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Ca làm việc:</span>
+                            <span class="badge bg-warning text-dark fw-bold" id="modal_shift_display">-</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Chọn Công việc <span class="text-danger">*</span></label>
+                        <select name="task_id" class="form-select form-select-sm py-2" required>
+                            <option value="">-- Chọn công việc thực hiện --</option>
+                            {% for t in tasks %}
+                            <option value="{{ t.id }}">{{ t.task_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold"><i class="bi bi-check-lg me-1"></i> Lưu phân công</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRegisterModal(empId, empName, dateStr, shift) {
+        document.getElementById('modal_employee_id').value = empId;
+        document.getElementById('modal_date').value = dateStr;
+        document.getElementById('modal_shift').value = shift;
+        document.getElementById('modal_emp_name_display').innerText = empName;
+        
+        const dateParts = dateStr.split('-');
+        document.getElementById('modal_date_display').innerText = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
+        document.getElementById('modal_shift_display').innerText = 'Ca ' + shift;
+
+        var registerModal = new bootstrap.Modal(document.getElementById('quickRegisterModal'));
+        registerModal.show();
+    }
+</script>
+{% endblock %}
