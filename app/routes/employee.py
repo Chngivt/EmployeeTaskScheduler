@@ -1,16 +1,26 @@
-from flask import Blueprint, render_template, request, redirect, url_for
-from app.models.employee import Employee
+import os
+from datetime import datetime
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from werkzeug.utils import secure_filename
 from app import db
+from app.models.employee import Employee
 from app.routes.auth import login_required
 
 employee_bp = Blueprint('employee', __name__, url_prefix='/employee')
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# --- DANH SÁCH NHÂN VIÊN ---
 @employee_bp.route('/')
 @login_required
 def index():
-    employees = Employee.query.all()
+    employees = Employee.query.order_by(Employee.id.desc()).all()
     return render_template('employee/index.html', employees=employees)
 
+# --- THÊM NHÂN VIÊN MỚI (CÓ XỬ LÝ UPLOAD ANH AVATAR) ---
 @employee_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
@@ -22,44 +32,53 @@ def add():
         department = request.form.get('department')
         position = request.form.get('position')
 
+        # Xử lý Upload Ảnh đại diện
+        avatar_filename = None
+        if 'avatar' in request.files:
+            file = request.files['avatar']
+            if file and file.filename != '' and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                # Đổi tên file theo thời gian để tránh bị trùng tên file
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+                avatar_filename = timestamp + filename
+
+                # Tạo thư mục static/uploads/avatars nếu chưa có
+                upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
+                os.makedirs(upload_dir, exist_ok=True)
+
+                # Lưu file ảnh
+                file.save(os.path.join(upload_dir, avatar_filename))
+
+        # Kiểm tra trùng Mã hoặc Email
+        existing_emp = Employee.query.filter(
+            (Employee.code == code) | (Employee.email == email)
+        ).first()
+
+        if existing_emp:
+            flash('Mã nhân viên hoặc Email đã tồn tại!', 'danger')
+            return redirect(url_for('employee.add'))
+
         new_emp = Employee(
             code=code,
             fullname=fullname,
             email=email,
             phone=phone,
             department=department,
-            position=position
+            position=position,
+            avatar=avatar_filename,
+            role='employee'
         )
+        # Đặt mật khẩu mặc định là 123456
+        new_emp.set_password('123456')
+
         db.session.add(new_emp)
         db.session.commit()
+       
         return redirect(url_for('employee.index'))
 
     return render_template('employee/add.html')
 
-
-@employee_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
-def edit(id):
-    emp = Employee.query.get_or_404(id)
-
-    if request.method == 'POST':
-        emp.fullname = request.form.get('fullname')
-        emp.email = request.form.get('email')
-        emp.phone = request.form.get('phone')
-        emp.department = request.form.get('department')
-        emp.position = request.form.get('position')
-        emp.role = request.form.get('role', emp.role)
-
-        password = request.form.get('password')
-        if password:
-            emp.set_password(password)
-
-        db.session.commit()
-        return redirect(url_for('employee.index'))
-
-    return render_template('employee/edit.html', emp=emp)
-
-
+# --- XÓA NHÂN VIÊN ---
 @employee_bp.route('/delete/<int:id>')
 @login_required
 def delete(id):
