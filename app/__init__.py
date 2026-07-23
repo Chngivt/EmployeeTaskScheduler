@@ -79,9 +79,20 @@ def create_app():
         start_of_week = today - timedelta(days=today.weekday())
         week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
         
+        # ================= ĐỌAN ĐÃ SỬA LỖI =================
         schedule_dict = {}
         for s in schedules:
-            schedule_dict[(s.employee_id, s.date, s.shift)] = s.task.task_name if s.task else "Có lịch"
+            if s.date:
+                # Ép kiểu s.date về chuỗi 'YYYY-MM-DD' chuẩn 100% với giao diện
+                date_key = s.date.strftime('%Y-%m-%d') if hasattr(s.date, 'strftime') else str(s.date)
+                
+                # Lấy tên công việc linh hoạt theo model
+                t_name = "Có lịch"
+                if s.task:
+                    t_name = getattr(s.task, 'task_name', None) or getattr(s.task, 'name', None) or "Có lịch"
+                
+                schedule_dict[(s.employee_id, date_key, s.shift)] = t_name
+        # =====================================================
             
         return render_template('dashboard.html', 
                                total_emp=total_emp, 
@@ -92,7 +103,7 @@ def create_app():
                                week_dates=week_dates,
                                schedule_dict=schedule_dict)
 
-    # --- ROUTE BÁO CÁO (SỬA LỖI 404 NOT FOUND) ---
+    # --- ROUTE BÁO CÁO ---
     @app.route('/report')
     def report():
         total_emp = Employee.query.count()
@@ -103,7 +114,7 @@ def create_app():
                                total_task=total_task, 
                                total_schedule=total_schedule)
 
-    # --- ROUTE CÀI ĐẶT (SỬA LỖI 404 NOT FOUND) ---
+    # --- ROUTE CÀI ĐẶT ---
     @app.route('/settings')
     def settings():
         return render_template('settings.html')
