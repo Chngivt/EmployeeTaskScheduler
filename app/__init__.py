@@ -56,7 +56,6 @@ def create_app():
     from app.routes.schedule import schedule_bp
     app.register_blueprint(schedule_bp)
 
-    # Đăng ký Auth Blueprint
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp)
 
@@ -74,19 +73,12 @@ def create_app():
         
         employees = Employee.query.all()
         schedules = Schedule.query.all()
-        
-        # --- BỔ SUNG LẤY DANH SÁCH CÔNG VIỆC TỪ DATABASE ---
         tasks = Task.query.all()
-        # ---------------------------------------------------
         
         today = datetime.now().date()
-        # Tính từ Thứ Hai đầu tuần
         start_of_week = today - timedelta(days=today.weekday())
-        
-        # Tạo danh sách 7 ngày trong tuần (Thứ 2 đến Chủ Nhật)
         week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
         
-        # Tạo dictionary lưu trữ lịch: key là (employee_id, date, shift) -> value là tên task
         schedule_dict = {}
         for s in schedules:
             schedule_dict[(s.employee_id, s.date, s.shift)] = s.task.task_name if s.task else "Có lịch"
@@ -96,23 +88,36 @@ def create_app():
                                total_task=total_task, 
                                total_schedule=total_schedule,
                                employees=employees,
-                               tasks=tasks,  # <--- ĐÃ TRUYỀN TASKS SANG DASHBOARD.HTML
+                               tasks=tasks,
                                week_dates=week_dates,
                                schedule_dict=schedule_dict)
 
-    # --- API THỐNG KÊ CHO DASHBOARD ---
+    # --- ROUTE BÁO CÁO (SỬA LỖI 404 NOT FOUND) ---
+    @app.route('/report')
+    def report():
+        total_emp = Employee.query.count()
+        total_task = Task.query.count()
+        total_schedule = Schedule.query.count()
+        return render_template('report.html', 
+                               total_emp=total_emp, 
+                               total_task=total_task, 
+                               total_schedule=total_schedule)
+
+    # --- ROUTE CÀI ĐẶT (SỬA LỖI 404 NOT FOUND) ---
+    @app.route('/settings')
+    def settings():
+        return render_template('settings.html')
+
+    # --- API THỐNG KÊ ---
     @app.route('/api/dashboard-stats')
     def dashboard_stats():
         from datetime import datetime, timedelta
         from sqlalchemy import func
-        import json
         
-        # Thống kê cơ bản
         total_employees = Employee.query.count()
         total_tasks = Task.query.count()
         total_schedules = Schedule.query.count()
         
-        # Lấy dữ liệu phân công theo ngày (7 ngày gần nhất)
         today = datetime.now().date()
         date_7_days_ago = today - timedelta(days=7)
         
@@ -123,13 +128,11 @@ def create_app():
             Schedule.date >= date_7_days_ago
         ).group_by(Schedule.date).all()
         
-        # Thống kê theo task (top 5)
         top_tasks = db.session.query(
             Task.task_name,
             func.count(Schedule.id).label('count')
         ).join(Schedule).group_by(Task.id).order_by(func.count(Schedule.id).desc()).limit(5).all()
         
-        # Thống kê ca làm
         shift_stats = db.session.query(
             Schedule.shift,
             func.count(Schedule.id).label('count')
