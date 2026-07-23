@@ -1,19 +1,17 @@
+import json
+from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from app import db
 from app.models.schedule import Schedule
 from app.models.employee import Employee
 from app.models.task import Task
-from app import db
-from datetime import datetime, timedelta
 from app.routes.auth import login_required
-import json
 
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
 @schedule_bp.route('/')
 @login_required
 def index():
-    from datetime import datetime, timedelta
-    
     today = datetime.now().date()
     # Tính từ Thứ Hai đầu tuần
     start_of_week = today - timedelta(days=today.weekday())
@@ -71,9 +69,11 @@ def add():
         )
         db.session.add(new_schedule)
         db.session.commit()
-        return redirect(url_for('schedule.index'))
+        
+        # Tự động quay về trang vừa thực hiện phân công (Dashboard hoặc Lịch phân công)
+        return redirect(request.referrer or url_for('schedule.index'))
 
-    # Nếu là GET request, lấy dữ liệu ngày/ca nếu được truyền sẵn từ giao diện Dashboard
+    # Nếu là GET request, lấy dữ liệu nhân viên & công việc truyền sang giao diện
     employees = Employee.query.all()
     tasks = Task.query.all()
     return render_template('schedule/add.html', employees=employees, tasks=tasks)
@@ -130,4 +130,4 @@ def delete(id):
     s = Schedule.query.get_or_404(id)
     db.session.delete(s)
     db.session.commit()
-    return redirect(url_for('schedule.index'))
+    return redirect(request.referrer or url_for('schedule.index'))
