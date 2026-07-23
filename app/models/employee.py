@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 class Employee(db.Model):
     __tablename__ = 'employee'
-    
+   
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(20), unique=True, nullable=False)
     fullname = db.Column(db.String(100), nullable=False)
@@ -11,8 +11,11 @@ class Employee(db.Model):
     phone = db.Column(db.String(20), nullable=False)
     department = db.Column(db.String(50), nullable=False)
     position = db.Column(db.String(50), nullable=False)
-    
-    # Trường mật khẩu và phân quyền mới
+   
+    # Trường lưu tên file ảnh đại diện mới
+    avatar = db.Column(db.String(255), nullable=True, default=None)
+   
+    # Trường mật khẩu và phân quyền
     password_hash = db.Column(db.String(255), nullable=False, default='pbkdf2:sha256:600000$defaultpassword')
     role = db.Column(db.String(20), default='employee') # 'admin' hoặc 'employee'
 
