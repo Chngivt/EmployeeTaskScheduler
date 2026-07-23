@@ -7,7 +7,7 @@ from flask_mail import Message
 
 auth_bp = Blueprint('auth', __name__)
 
-# --- BỔ SUNG HÀM BẢO VỆ ĐĂNG NHẬP ---
+# --- HÀM BẢO VỆ ĐĂNG NHẬP ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -27,6 +27,15 @@ def login():
             session['employee_id'] = emp.id
             session['fullname'] = emp.fullname
             session['role'] = emp.role
+            
+            # --- LƯU ĐỊA CHỈ IP VÀO SESSION ---
+            if request.environ.get('HTTP_X_FORWARDED_FOR'):
+                ip_address = request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0]
+            else:
+                ip_address = request.remote_addr
+            session['ip_address'] = ip_address
+            # ---------------------------------
+            
             return redirect(url_for('dashboard'))
         else:
             return render_template('auth/login.html', error="Email hoặc mật khẩu không chính xác!")
