@@ -32,9 +32,16 @@
                             <td class="text-start ps-4 text-muted">{{ loop.index }}</td>
                             <td class="text-start fw-bold text-dark">
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 32px; height: 32px; font-size: 12px;">
-                                        {{ s.employee.fullname[0]|upper if s.employee else 'N' }}
-                                    </div>
+                                    {% if s.employee and s.employee.avatar %}
+                                        <img src="{{ url_for('static', filename='uploads/avatars/' + s.employee.avatar) }}" 
+                                             alt="{{ s.employee.fullname }}" 
+                                             class="rounded-circle me-2 border shadow-sm" 
+                                             style="width: 32px; height: 32px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 32px; height: 32px; font-size: 12px;">
+                                            {{ s.employee.fullname[0]|upper if s.employee else 'N' }}
+                                        </div>
+                                    {% endif %}
                                     <div>
                                         <div>{{ s.employee.fullname if s.employee else 'N/A' }}</div>
                                         <small class="text-muted font-normal" style="font-size: 11px;">{{ s.employee.code if s.employee else '' }}</small>
@@ -43,7 +50,7 @@
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark border px-2 py-1 fw-semibold">
-                                    {{ s.date.strftime('%d/%m/%Y') }}
+                                    {{ s.date.strftime('%d/%m/%Y') if s.date else '' }}
                                 </span>
                             </td>
                             <td>
