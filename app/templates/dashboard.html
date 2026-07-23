@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .shift-box-clickable {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .shift-box-clickable:hover {
+        border-color: #2563eb !important;
+        background-color: #eff6ff !important;
+        transform: translateY(-1px);
+    }
+</style>
+
 <!-- 4 Thẻ Card Thống kê tổng quan -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-3 mb-xl-0">
@@ -75,7 +87,6 @@
             </div>
             <div class="card-body p-4">
                 <form action="/schedule/add" method="POST">
-                    <!-- Chọn Nhân viên -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Nhân viên</label>
                         <select name="employee_id" class="form-select form-select-sm" required>
@@ -86,7 +97,6 @@
                         </select>
                     </div>
 
-                    <!-- Chọn Công việc -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Công việc</label>
                         <select name="task_id" class="form-select form-select-sm" required>
@@ -97,32 +107,24 @@
                         </select>
                     </div>
 
-                    <!-- Ngày làm việc -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Ngày làm việc</label>
                         <input type="date" name="date" class="form-control form-control-sm" required>
                     </div>
 
-                    <!-- Ca làm việc -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold small d-block">Ca làm việc</label>
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="shift" id="shift1" value="Sáng" checked>
-                            <label class="form-check-label small" for="shift1">
-                                Ca sáng <span class="text-muted" style="font-size: 11px;">(07:30 - 11:30)</span>
-                            </label>
+                            <label class="form-check-label small" for="shift1">Ca sáng (07:30 - 11:30)</label>
                         </div>
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="shift" id="shift2" value="Chiều">
-                            <label class="form-check-label small" for="shift2">
-                                Ca chiều <span class="text-muted" style="font-size: 11px;">(13:00 - 17:00)</span>
-                            </label>
+                            <label class="form-check-label small" for="shift2">Ca chiều (13:00 - 17:00)</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="shift" id="shift3" value="Tối">
-                            <label class="form-check-label small" for="shift3">
-                                Ca tối <span class="text-muted" style="font-size: 11px;">(18:00 - 21:00)</span>
-                            </label>
+                            <label class="form-check-label small" for="shift3">Ca tối (18:00 - 21:00)</label>
                         </div>
                     </div>
 
@@ -140,7 +142,7 @@
             <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-calendar-week text-primary me-2"></i> Lịch làm việc tuần này</h5>
-                    <small class="text-muted">Phân bố công việc chi tiết theo từng ca trong tuần</small>
+                    <small class="text-muted">Ấn trực tiếp vào ca rảnh để đăng ký phân công nhanh</small>
                 </div>
                 
                 <div class="d-flex align-items-center gap-2">
@@ -178,7 +180,7 @@
                                             </div>
                                             <div class="text-truncate" style="max-width: 110px;">
                                                 <h6 class="mb-0 fw-bold text-dark text-truncate" style="font-size: 12px;" title="{{ emp.fullname }}">{{ emp.fullname }}</h6>
-                                                <small class="text-muted" style="font-size: 10px;">{{ emp.department }}</small>
+                                                <small class="text-muted" style="font-size: 10px;">{{ emp.code }}</small>
                                             </div>
                                         </div>
                                     </td>
@@ -186,26 +188,46 @@
                                     {% for d in week_dates %}
                                     <td class="p-1" style="background-color: #fafbfc; vertical-align: top;">
                                         <!-- Ô Ca Sáng -->
-                                        <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm" style="min-height: 38px;">
-                                            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size: 8px;">Sáng</span>
-                                            <div class="text-dark fw-semibold text-truncate" style="font-size: 10px;" title="{{ schedule_dict.get((emp.id, d, 'Sáng'), '') }}">
-                                                {{ schedule_dict.get((emp.id, d, 'Sáng'), '-') if schedule_dict.get((emp.id, d, 'Sáng')) else '-' }}
-                                            </div>
+                                        {% set task_sang = schedule_dict.get((emp.id, d, 'Sáng')) %}
+                                        {% if task_sang %}
+                                        <div class="p-1 mb-1 rounded border text-start bg-primary bg-opacity-10 border-primary-subtle shadow-sm" style="min-height: 42px;">
+                                            <span class="badge bg-primary text-white fw-bold" style="font-size: 8px;">Sáng</span>
+                                            <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_sang }}">{{ task_sang }}</div>
                                         </div>
+                                        {% else %}
+                                        <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Sáng')">
+                                            <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Sáng</span>
+                                            <div class="text-muted style-clickable mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
+                                        </div>
+                                        {% endif %}
+
                                         <!-- Ô Ca Chiều -->
-                                        <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm" style="min-height: 38px;">
-                                            <span class="badge bg-warning bg-opacity-15 text-dark fw-bold" style="font-size: 8px;">Chiều</span>
-                                            <div class="text-dark fw-semibold text-truncate" style="font-size: 10px;" title="{{ schedule_dict.get((emp.id, d, 'Chiều'), '') }}">
-                                                {{ schedule_dict.get((emp.id, d, 'Chiều'), '-') if schedule_dict.get((emp.id, d, 'Chiều')) else '-' }}
-                                            </div>
+                                        {% set task_chieu = schedule_dict.get((emp.id, d, 'Chiều')) %}
+                                        {% if task_chieu %}
+                                        <div class="p-1 mb-1 rounded border text-start bg-warning bg-opacity-10 border-warning-subtle shadow-sm" style="min-height: 42px;">
+                                            <span class="badge bg-warning text-dark fw-bold" style="font-size: 8px;">Chiều</span>
+                                            <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_chieu }}">{{ task_chieu }}</div>
                                         </div>
+                                        {% else %}
+                                        <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Chiều')">
+                                            <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Chiều</span>
+                                            <div class="text-muted style-clickable mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
+                                        </div>
+                                        {% endif %}
+
                                         <!-- Ô Ca Tối -->
-                                        <div class="p-1 rounded border text-start bg-white shadow-sm" style="min-height: 38px;">
-                                            <span class="badge bg-dark bg-opacity-75 text-white fw-bold" style="font-size: 8px;">Tối</span>
-                                            <div class="text-dark fw-semibold text-truncate" style="font-size: 10px;" title="{{ schedule_dict.get((emp.id, d, 'Tối'), '') }}">
-                                                {{ schedule_dict.get((emp.id, d, 'Tối'), '-') if schedule_dict.get((emp.id, d, 'Tối')) else '-' }}
-                                            </div>
+                                        {% set task_toi = schedule_dict.get((emp.id, d, 'Tối')) %}
+                                        {% if task_toi %}
+                                        <div class="p-1 rounded border text-start bg-dark bg-opacity-10 border-secondary-subtle shadow-sm" style="min-height: 42px;">
+                                            <span class="badge bg-dark text-white fw-bold" style="font-size: 8px;">Tối</span>
+                                            <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_toi }}">{{ task_toi }}</div>
                                         </div>
+                                        {% else %}
+                                        <div class="p-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Tối')">
+                                            <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Tối</span>
+                                            <div class="text-muted style-clickable mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
+                                        </div>
+                                        {% endif %}
                                     </td>
                                     {% endfor %}
                                 </tr>
@@ -222,4 +244,77 @@
         </div>
     </div>
 </div>
+
+<!-- POPUP (MODAL) ĐĂNG KÝ CA NHANH KHI CLICK VÀO Ô -->
+<div class="modal fade" id="quickRegisterModal" tabindex="-1" aria-labelledby="quickRegisterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-primary text-white rounded-top-4 py-3">
+                <h5 class="modal-title fw-bold fs-6" id="quickRegisterModalLabel"><i class="bi bi-calendar-plus me-2"></i>Đăng Ký Ca Làm Việc</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/schedule/add" method="POST">
+                <div class="modal-body p-4">
+                    <!-- Giá trị ẩn gửi lên Server -->
+                    <input type="hidden" name="employee_id" id="modal_employee_id">
+                    <input type="hidden" name="date" id="modal_date">
+                    <input type="hidden" name="shift" id="modal_shift">
+
+                    <!-- Thông tin tổng quan ca đăng ký -->
+                    <div class="p-3 mb-3 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Nhân viên:</span>
+                            <strong class="text-dark small" id="modal_emp_name_display">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Ngày phân công:</span>
+                            <strong class="text-primary small" id="modal_date_display">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Ca làm việc:</span>
+                            <span class="badge bg-warning text-dark fw-bold" id="modal_shift_display">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Chọn Công việc -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Chọn Công việc <span class="text-danger">*</span></label>
+                        <select name="task_id" class="form-select form-select-sm py-2" required>
+                            <option value="">-- Chọn công việc thực hiện --</option>
+                            {% for t in tasks %}
+                            <option value="{{ t.id }}">{{ t.task_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold"><i class="bi bi-check-lg me-1"></i> Xác nhận lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRegisterModal(empId, empName, dateStr, shift) {
+        // Gán dữ liệu ẩn vào Form
+        document.getElementById('modal_employee_id').value = empId;
+        document.getElementById('modal_date').value = dateStr;
+        document.getElementById('modal_shift').value = shift;
+
+        // Hiển thị thông tin trực quan lên Modal Popup
+        document.getElementById('modal_emp_name_display').innerText = empName;
+        
+        // Định dạng lại ngày hiển thị DD/MM/YYYY
+        const dateParts = dateStr.split('-');
+        document.getElementById('modal_date_display').innerText = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
+        
+        document.getElementById('modal_shift_display').innerText = 'Ca ' + shift;
+
+        // Mở Bootstrap Modal Popup
+        var registerModal = new bootstrap.Modal(document.getElementById('quickRegisterModal'));
+        registerModal.show();
+    }
+</script>
 {% endblock %}
