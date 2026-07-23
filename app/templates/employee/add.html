@@ -8,8 +8,16 @@
                 <h4 class="mb-0">Thêm Nhân Viên Mới</h4>
             </div>
             <div class="card-body">
-                <!-- Form gửi dữ liệu qua phương thức POST -->
-                <form action="/employee/add" method="POST">
+                <!-- Form gửi dữ liệu (Đã thêm enctype="multipart/form-data" để hỗ trợ tải file ảnh) -->
+                <form action="/employee/add" method="POST" enctype="multipart/form-data">
+                   
+                    <!-- Ô CHỌN ẢNH ĐẠI DIỆN -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ảnh Đại Diện</label>
+                        <input type="file" class="form-control" name="avatar" accept="image/*">
+                        <div class="form-text">Hỗ trợ các định dạng file ảnh: JPG, PNG, JPEG.</div>
+                    </div>
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Mã Nhân Viên</label>
@@ -20,7 +28,7 @@
                             <input type="text" class="form-control" name="fullname" required placeholder="VD: Nguyễn Văn A">
                         </div>
                     </div>
-                    
+                   
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
