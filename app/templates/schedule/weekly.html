@@ -53,46 +53,46 @@
                                     </div>
                                 </div>
                             </td>
-
                             {% for d in week_dates %}
+                            {% set date_key = d.strftime('%Y-%m-%d') %}
                             <td class="p-1" style="background-color: #fafbfc; vertical-align: top;">
                                 <!-- Ca Sáng -->
-                                {% set task_sang = schedule_dict.get((emp.id, d, 'Sáng')) %}
+                                {% set task_sang = schedule_dict.get((emp.id, date_key, 'Sáng')) %}
                                 {% if task_sang %}
                                 <div class="p-1 mb-1 rounded border text-start bg-primary bg-opacity-10 border-primary-subtle shadow-sm" style="min-height: 42px;">
                                     <span class="badge bg-primary text-white fw-bold" style="font-size: 8px;">Sáng</span>
                                     <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_sang }}">{{ task_sang }}</div>
                                 </div>
                                 {% else %}
-                                <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Sáng')">
+                                <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ date_key }}', 'Sáng')">
                                     <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Sáng</span>
                                     <div class="text-muted mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
                                 </div>
                                 {% endif %}
 
                                 <!-- Ca Chiều -->
-                                {% set task_chieu = schedule_dict.get((emp.id, d, 'Chiều')) %}
+                                {% set task_chieu = schedule_dict.get((emp.id, date_key, 'Chiều')) %}
                                 {% if task_chieu %}
                                 <div class="p-1 mb-1 rounded border text-start bg-warning bg-opacity-10 border-warning-subtle shadow-sm" style="min-height: 42px;">
                                     <span class="badge bg-warning text-dark fw-bold" style="font-size: 8px;">Chiều</span>
                                     <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_chieu }}">{{ task_chieu }}</div>
                                 </div>
                                 {% else %}
-                                <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Chiều')">
+                                <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ date_key }}', 'Chiều')">
                                     <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Chiều</span>
                                     <div class="text-muted mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
                                 </div>
                                 {% endif %}
 
                                 <!-- Ca Tối -->
-                                {% set task_toi = schedule_dict.get((emp.id, d, 'Tối')) %}
+                                {% set task_toi = schedule_dict.get((emp.id, date_key, 'Tối')) %}
                                 {% if task_toi %}
                                 <div class="p-1 rounded border text-start bg-dark bg-opacity-10 border-secondary-subtle shadow-sm" style="min-height: 42px;">
                                     <span class="badge bg-dark text-white fw-bold" style="font-size: 8px;">Tối</span>
                                     <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ task_toi }}">{{ task_toi }}</div>
                                 </div>
                                 {% else %}
-                                <div class="p-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ d.strftime('%Y-%m-%d') }}', 'Tối')">
+                                <div class="p-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ date_key }}', 'Tối')">
                                     <span class="badge bg-secondary bg-opacity-25 text-dark fw-bold" style="font-size: 8px;">Tối</span>
                                     <div class="text-muted mt-1" style="font-size: 9px;"><i class="bi bi-plus-circle me-1"></i>Click để đăng ký</div>
                                 </div>
@@ -146,7 +146,7 @@
                         <select name="task_id" class="form-select form-select-sm py-2" required>
                             <option value="">-- Chọn công việc thực hiện --</option>
                             {% for t in tasks %}
-                            <option value="{{ t.id }}">{{ t.task_name }}</option>
+                            <option value="{{ t.id }}">{{ t.task_name or t.name or 'Công việc ' ~ t.id }}</option>
                             {% endfor %}
                         </select>
                     </div>
