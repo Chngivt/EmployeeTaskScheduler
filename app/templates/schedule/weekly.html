@@ -11,6 +11,13 @@
         background-color: #eff6ff !important;
         transform: translateY(-1px);
     }
+    /* Đảm bảo Modal luôn nổi lên trên cùng, không bị lớp mờ đè lên */
+    #quickRegisterModal {
+        z-index: 1060 !important;
+    }
+    .modal-backdrop {
+        z-index: 1050 !important;
+    }
 </style>
 
 <div class="card shadow-sm border-0 rounded-4">
@@ -53,6 +60,7 @@
                                     </div>
                                 </div>
                             </td>
+
                             {% for d in week_dates %}
                             {% set date_key = d.strftime('%Y-%m-%d') %}
                             <td class="p-1" style="background-color: #fafbfc; vertical-align: top;">
@@ -146,7 +154,7 @@
                         <select name="task_id" class="form-select form-select-sm py-2" required>
                             <option value="">-- Chọn công việc thực hiện --</option>
                             {% for t in tasks %}
-                            <option value="{{ t.id }}">{{ t.task_name or t.name or 'Công việc ' ~ t.id }}</option>
+                            <option value="{{ t.id }}">{{ t.task_name or t.name or ('Công việc ' ~ t.id) }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -162,16 +170,23 @@
 
 <script>
     function openRegisterModal(empId, empName, dateStr, shift) {
+        var modalEl = document.getElementById('quickRegisterModal');
+       
+        // CHUYỂN MODAL RA NGOÀI CÙNG THẺ BODY ĐỂ KHÔNG BỊ LỚP MỜ BẤM ĐÈ
+        if (modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+
         document.getElementById('modal_employee_id').value = empId;
         document.getElementById('modal_date').value = dateStr;
         document.getElementById('modal_shift').value = shift;
         document.getElementById('modal_emp_name_display').innerText = empName;
-        
+       
         const dateParts = dateStr.split('-');
         document.getElementById('modal_date_display').innerText = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
         document.getElementById('modal_shift_display').innerText = 'Ca ' + shift;
 
-        var registerModal = new bootstrap.Modal(document.getElementById('quickRegisterModal'));
+        var registerModal = bootstrap.Modal.getOrCreateInstance(modalEl);
         registerModal.show();
     }
 </script>
