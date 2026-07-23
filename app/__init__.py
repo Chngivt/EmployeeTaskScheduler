@@ -75,6 +75,10 @@ def create_app():
         employees = Employee.query.all()
         schedules = Schedule.query.all()
         
+        # --- BỔ SUNG LẤY DANH SÁCH CÔNG VIỆC TỪ DATABASE ---
+        tasks = Task.query.all()
+        # ---------------------------------------------------
+        
         today = datetime.now().date()
         # Tính từ Thứ Hai đầu tuần
         start_of_week = today - timedelta(days=today.weekday())
@@ -92,6 +96,7 @@ def create_app():
                                total_task=total_task, 
                                total_schedule=total_schedule,
                                employees=employees,
+                               tasks=tasks,  # <--- ĐÃ TRUYỀN TASKS SANG DASHBOARD.HTML
                                week_dates=week_dates,
                                schedule_dict=schedule_dict)
 
