@@ -6,9 +6,13 @@
         <h4 class="fw-bold text-dark mb-1"><i class="bi bi-people-fill text-primary me-2"></i> Danh Sách Nhân Viên</h4>
         <small class="text-muted">Quản lý hồ sơ, phòng ban và tài khoản nhân sự</small>
     </div>
+    
+    <!-- 1. BỔ SUNG: CHỈ ADMIN MỚI THẤY NÚT THÊM MỚI -->
+    {% if session.get('role') == 'admin' %}
     <a href="/employee/add" class="btn btn-primary shadow-sm rounded-pill px-3">
         <i class="bi bi-person-plus-fill me-1"></i> Thêm Nhân Viên Mới
     </a>
+    {% endif %}
 </div>
 
 <div class="card shadow-sm border-0 rounded-4">
@@ -22,7 +26,11 @@
                         <th class="py-3">Số điện thoại</th>
                         <th class="py-3">Phòng ban</th>
                         <th class="py-3">Chức vụ</th>
+                        
+                        <!-- 2. BỔ SUNG: CHỈ ADMIN MỚI THẤY TIÊU ĐỀ THAO TÁC -->
+                        {% if session.get('role') == 'admin' %}
                         <th class="py-3 text-end pe-4">Thao tác</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -31,14 +39,13 @@
                         <tr>
                             <td class="text-start ps-4 py-3">
                                 <div class="d-flex align-items-center">
-                                    <!-- HIỂN THỊ AVATAR HOẶC CHỮ CÁI ĐẦU -->
                                     {% if emp.avatar %}
-                                        <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}"
-                                             alt="{{ emp.fullname }}"
-                                             class="rounded-circle me-3 border shadow-sm"
+                                        <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}" 
+                                             alt="{{ emp.fullname }}" 
+                                             class="rounded-circle me-3 border shadow-sm" 
                                              style="width: 40px; height: 40px; object-fit: cover;">
                                     {% else %}
-                                        <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 fw-bold"
+                                        <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 fw-bold" 
                                              style="width: 40px; height: 40px; font-size: 15px;">
                                             {{ emp.fullname[0]|upper }}
                                         </div>
@@ -54,11 +61,21 @@
                             <td><span class="badge bg-light text-dark border font-monospace px-2 py-1">{{ emp.phone }}</span></td>
                             <td><span class="badge bg-info bg-opacity-10 text-info fw-bold px-2 py-1">{{ emp.department }}</span></td>
                             <td class="fw-semibold text-dark">{{ emp.position }}</td>
+                            
+                            <!-- 3. BỔ SUNG: CHỈ ADMIN MỚI THẤY NÚT SỬA & XÓA -->
+                            {% if session.get('role') == 'admin' %}
                             <td class="text-end pe-4">
+                                <!-- NÚT CHỈNH SỬA THÔNG TIN -->
+                                <a href="/employee/edit/{{ emp.id }}" class="btn btn-outline-primary btn-sm rounded-circle p-1 px-2 me-1" title="Chỉnh sửa">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <!-- NÚT XÓA -->
                                 <a href="/employee/delete/{{ emp.id }}" class="btn btn-outline-danger btn-sm rounded-circle p-1 px-2" onclick="return confirm('Bạn có chắc chắn muốn xóa nhân viên này?')" title="Xóa">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     {% else %}
