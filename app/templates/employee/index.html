@@ -1,52 +1,71 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
-        <h2 class="fw-bold mb-1">Danh Sách Nhân Viên</h2>
-        <p class="text-muted mb-0">Quản lý thông tin và quyền hạn nhân viên trong hệ thống</p>
+        <h4 class="fw-bold text-dark mb-1"><i class="bi bi-people-fill text-primary me-2"></i> Danh Sách Nhân Viên</h4>
+        <small class="text-muted">Quản lý hồ sơ, phòng ban và tài khoản nhân sự</small>
     </div>
-    <a href="{{ url_for('employee.add') }}" class="btn btn-success shadow-sm"><i class="bi bi-plus-circle me-1"></i> Thêm Nhân Viên</a>
+    <a href="/employee/add" class="btn btn-primary shadow-sm rounded-pill px-3">
+        <i class="bi bi-person-plus-fill me-1"></i> Thêm Nhân Viên Mới
+    </a>
 </div>
 
-<div class="card border-0 rounded-4">
+<div class="card shadow-sm border-0 rounded-4">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
+            <table class="table table-hover align-middle mb-0 text-center" style="font-size: 13px;">
+                <thead class="table-light">
                     <tr>
-                        <th class="py-3 ps-4 fw-semibold">Mã NV</th>
-                        <th class="py-3 fw-semibold">Họ Tên</th>
-                        <th class="py-3 fw-semibold">Email</th>
-                        <th class="py-3 fw-semibold">Phòng Ban</th>
-                        <th class="py-3 fw-semibold">Chức Vụ</th>
-                        <th class="py-3 fw-semibold">Quyền Hạn</th>
-                        <th class="py-3 text-center fw-semibold">Hành Động</th>
+                        <th class="py-3 text-start ps-4">Nhân viên</th>
+                        <th class="py-3 text-start">Email</th>
+                        <th class="py-3">Số điện thoại</th>
+                        <th class="py-3">Phòng ban</th>
+                        <th class="py-3">Chức vụ</th>
+                        <th class="py-3 text-end pe-4">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for emp in employees %}
-                    <tr>
-                        <td class="ps-4 fw-semibold text-primary">{{ emp.code }}</td>
-                        <td class="fw-semibold">{{ emp.fullname }}</td>
-                        <td>{{ emp.email }}</td>
-                        <td>{{ emp.department }}</td>
-                        <td>{{ emp.position }}</td>
-                        <td>
-                            <span class="badge {% if emp.role == 'admin' %}bg-danger{% else %}bg-info{% endif %} bg-opacity-10 text-{% if emp.role == 'admin' %}danger{% else %}info{% endif %} px-2 py-1">
-                                {% if emp.role == 'admin' %}<i class="bi bi-shield-check me-1"></i>Quản Trị{% else %}<i class="bi bi-person me-1"></i>Nhân Viên{% endif %}
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            <a href="{{ url_for('employee.edit', id=emp.id) }}" class="btn btn-sm btn-primary px-3"><i class="bi bi-pencil me-1"></i>Sửa</a>
-                            <a href="{{ url_for('employee.delete', id=emp.id) }}" class="btn btn-sm btn-danger px-3" onclick="return confirm('Bạn có chắc muốn xóa nhân viên này?');"><i class="bi bi-trash me-1"></i>Xóa</a>
-                        </td>
-                    </tr>
+                    {% if employees %}
+                        {% for emp in employees %}
+                        <tr>
+                            <td class="text-start ps-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    <!-- HIỂN THỊ AVATAR HOẶC CHỮ CÁI ĐẦU -->
+                                    {% if emp.avatar %}
+                                        <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}"
+                                             alt="{{ emp.fullname }}"
+                                             class="rounded-circle me-3 border shadow-sm"
+                                             style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 fw-bold"
+                                             style="width: 40px; height: 40px; font-size: 15px;">
+                                            {{ emp.fullname[0]|upper }}
+                                        </div>
+                                    {% endif %}
+
+                                    <div>
+                                        <strong class="text-dark d-block fw-bold">{{ emp.fullname }}</strong>
+                                        <small class="text-muted" style="font-size: 11px;">Mã: {{ emp.code }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-start text-secondary">{{ emp.email }}</td>
+                            <td><span class="badge bg-light text-dark border font-monospace px-2 py-1">{{ emp.phone }}</span></td>
+                            <td><span class="badge bg-info bg-opacity-10 text-info fw-bold px-2 py-1">{{ emp.department }}</span></td>
+                            <td class="fw-semibold text-dark">{{ emp.position }}</td>
+                            <td class="text-end pe-4">
+                                <a href="/employee/delete/{{ emp.id }}" class="btn btn-outline-danger btn-sm rounded-circle p-1 px-2" onclick="return confirm('Bạn có chắc chắn muốn xóa nhân viên này?')" title="Xóa">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     {% else %}
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-5">Chưa có nhân viên nào trong hệ thống.</td>
-                    </tr>
-                    {% endfor %}
+                        <tr>
+                            <td colspan="6" class="text-muted py-5 text-center">Chưa có nhân viên nào trong danh sách.</td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
