@@ -132,7 +132,7 @@
         </div>
         <hr class="text-secondary opacity-25">
 
-        <!-- DANH SÁCH MENU SIDEBAR CHUẨN MẪU BÊN TRÁI -->
+        <!-- DANH SÁCH MENU SIDEBAR -->
         <ul class="nav nav-pills flex-column mb-auto">
             <!-- 1. Dashboard -->
             <li class="nav-item mb-1">
@@ -155,16 +155,16 @@
                 </a>
             </li>
             
-            <!-- 4. Phân công -->
+            <!-- 4. Phân công (Trang danh sách) -->
             <li class="nav-item mb-1">
                 <a href="/schedule" class="nav-link{% if request.path == '/schedule' %} active{% endif %}">
                     <i class="bi bi-calendar-check me-2"></i> Phân công
                 </a>
             </li>
             
-            <!-- 5. Lịch tuần -->
+            <!-- 5. Lịch tuần (Trang bảng ma trận tuần) -->
             <li class="nav-item mb-1">
-                <a href="/schedule" class="nav-link{% if request.path.startswith('/weekly') %} active{% endif %}">
+                <a href="/schedule/weekly" class="nav-link{% if request.path == '/schedule/weekly' %} active{% endif %}">
                     <i class="bi bi-calendar3 me-2"></i> Lịch tuần
                 </a>
             </li>
