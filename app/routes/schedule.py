@@ -1,6 +1,7 @@
 import json
+import random
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash
 from app import db
 from app.models.schedule import Schedule
 from app.models.employee import Employee
@@ -47,7 +48,7 @@ def weekly():
                            schedule_dict=schedule_dict,
                            tasks=tasks)
 
-# --- 3. XỬ LÝ THÊM/ĐĂNG KÝ PHÂN CÔNG (ĐÃ SỬA ĐOẠN NÀY) ---
+# --- 3. XỬ LÝ THÊM/ĐĂNG KÝ PHÂN CÔNG ---
 @schedule_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
@@ -69,7 +70,6 @@ def add():
                 shift=shift
             ).first()
             
-            # ================= ĐỌAN ĐÃ SỬA =================
             if conflict:
                 # Nếu đã có phân công sẵn -> Cập nhật lại công việc mới
                 conflict.task_id = int(task_id)
@@ -84,7 +84,6 @@ def add():
                 db.session.add(new_schedule)
 
             db.session.commit()
-            # ===============================================
         except Exception as e:
             db.session.rollback()
             print(f"Lỗi khi thêm/cập nhật phân công: {e}")
@@ -103,3 +102,55 @@ def delete(id):
     db.session.delete(s)
     db.session.commit()
     return redirect(request.referrer or url_for('schedule.weekly'))
+
+# --- 5. PHÂN CÔNG TỰ ĐỘNG ---
+@schedule_bp.route('/auto_assign', methods=['POST'])
+@login_required
+def auto_assign():
+    # Lấy ngày của tuần hiện tại
+    today = datetime.now().date()
+    start_of_week = today - timedelta(days=today.weekday())
+    week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
+    
+    # Lấy danh sách nhân viên và công việc đang có
+    employees = Employee.query.all()
+    tasks = Task.query.all()
+    
+    if not employees or not tasks:
+        flash("Lỗi: Cần có ít nhất 1 nhân viên và 1 công việc trong hệ thống để thực hiện phân công tự động!", "danger")
+        return redirect(url_for('schedule.weekly'))
+        
+    # Thiết lập các ca muốn tự động điền (Thường là Sáng và Chiều)
+    shifts = ['Sáng', 'Chiều'] 
+    assigned_count = 0
+    
+    # Quét qua từng ngày, từng nhân viên, từng ca
+    for d in week_dates:
+        for emp in employees:
+            for shift in shifts:
+                # Kiểm tra xem nhân viên đã có việc ở ca này chưa
+                existing_schedule = Schedule.query.filter_by(employee_id=emp.id, date=d, shift=shift).first()
+                
+                # Nếu ca trống, chọn 1 công việc ngẫu nhiên gán vào
+                if not existing_schedule:
+                    random_task = random.choice(tasks)
+                    new_schedule = Schedule(
+                        employee_id=emp.id,
+                        task_id=random_task.id,
+                        date=d,
+                        shift=shift
+                    )
+                    db.session.add(new_schedule)
+                    assigned_count += 1
+                    
+    try:
+        db.session.commit()
+        if assigned_count > 0:
+            flash(f"Thành công: Đã tự động điền {assigned_count} ca làm việc trống trong tuần này!", "success")
+        else:
+            flash("Tuần này đã được phân công kín lịch, không có ca trống nào cần điền thêm.", "info")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Đã xảy ra lỗi khi phân công tự động: {e}", "danger")
+        
+    return redirect(url_for('schedule.weekly'))
