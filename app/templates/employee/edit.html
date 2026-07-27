@@ -54,6 +54,7 @@
                                 <option value="Kỹ Thuật" {% if emp.department == 'Kỹ Thuật' %}selected{% endif %}>Kỹ Thuật</option>
                                 <option value="Bán hàng" {% if emp.department == 'Bán hàng' %}selected{% endif %}>Bán hàng</option>
                                 <option value="Marketing" {% if emp.department == 'Marketing' %}selected{% endif %}>Marketing</option>
+                                <option value="Trưởng ban phụ huynh" {% if emp.department == 'Trưởng ban phụ huynh' %}selected{% endif %}>Trưởng ban phụ huynh</option>
                                 <option value="Quản trị" {% if emp.department == 'Quản trị' %}selected{% endif %}>Quản trị</option>
                             </select>
                         </div>
@@ -76,6 +77,20 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-secondary small">Mật khẩu mới (Tùy chọn)</label>
                             <input type="password" name="password" class="form-control" placeholder="Để trống nếu không đổi">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary small">Cập nhật Avatar</label>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if emp.avatar %}
+                                <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}" class="rounded-circle border shadow-sm" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light border rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="bi bi-person text-muted fs-4"></i>
+                                </div>
+                            {% endif %}
+                            <input type="file" name="avatar" class="form-control form-control-sm" accept="image/*">
                         </div>
                     </div>
 
