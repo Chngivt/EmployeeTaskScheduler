@@ -170,3 +170,20 @@ def auto_assign():
         flash(f"Đã xảy ra lỗi khi phân công tự động: {e}", "danger")
         
     return redirect(url_for('schedule.weekly'))
+
+# --- 6. XÓA TẤT CẢ LỊCH VÀ PHÂN CÔNG RANDOM LẠI ---
+@schedule_bp.route('/reset_and_auto_assign', methods=['POST'])
+@login_required
+def reset_and_auto_assign():
+    try:
+        # Xóa toàn bộ lịch hiện có trong CSDL
+        Schedule.query.delete()
+        db.session.commit()
+        flash("Đã xóa toàn bộ lịch cũ thành công!", "info")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Lỗi khi xóa lịch cũ: {e}", "danger")
+        return redirect(url_for('schedule.weekly'))
+
+    # Sau khi xóa xong, gọi tiếp hàm phân công tự động để tạo lịch random mới
+    return auto_assign()
