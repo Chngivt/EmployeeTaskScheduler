@@ -11,7 +11,7 @@
         background-color: #eff6ff !important;
         transform: translateY(-1px);
     }
-    #quickRegisterModal {
+    #quickRegisterModal, #importExcelModal {
         z-index: 1060 !important;
     }
     .modal-backdrop {
@@ -40,15 +40,20 @@
         </div>
         
         <!-- === KHU VỰC CÁC NÚT BẤM === -->
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
             <div class="badge bg-light text-dark border px-3 py-2 fw-normal rounded-pill">
                 {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
             </div>
             
+            <!-- NÚT NẠP EXCEL -->
+            <button type="button" class="btn btn-info btn-sm shadow-sm rounded-pill px-3 text-white fw-semibold" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                <i class="bi bi-file-earmark-arrow-up me-1"></i> Nạp Excel
+            </button>
+
             <!-- NÚT XÓA TẤT CẢ LỊCH -->
             <form action="{{ url_for('schedule.reset_schedule') }}" method="POST" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA TẤT CẢ lịch phân công hiện tại không?');">
                 <button type="submit" class="btn btn-outline-danger btn-sm shadow-sm rounded-pill px-3 fw-semibold">
-                    <i class="bi bi-trash me-1"></i> Xóa tất cả lịch
+                    <i class="bi bi-trash me-1"></i> Xóa tất cả
                 </button>
             </form>
 
@@ -206,6 +211,33 @@
                 <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
                     <button type="button" class="btn btn-light btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold"><i class="bi bi-check-lg me-1"></i> Lưu phân công</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nạp Excel -->
+<div class="modal fade" id="importExcelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-info text-white py-3">
+                <h5 class="modal-title fw-bold fs-6"><i class="bi bi-file-earmark-excel me-2"></i>Nạp Lịch Phân Công Từ Excel</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('schedule.import_excel') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Chọn file Excel phân công (.xlsx, .xls) <span class="text-danger">*</span></label>
+                        <input type="file" name="excel_file" class="form-control form-control-sm" accept=".xlsx, .xls" required>
+                        <div class="form-text mt-2" style="font-size: 11px;">
+                            Hệ thống sẽ tự động đọc cấu trúc Thứ, Buổi, Công việc và Tên nhân viên từ file Excel để phân công vào lịch tuần.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-info btn-sm rounded-pill px-4 text-white fw-semibold"><i class="bi bi-upload me-1"></i> Tải lên & Cập nhật</button>
                 </div>
             </form>
         </div>
