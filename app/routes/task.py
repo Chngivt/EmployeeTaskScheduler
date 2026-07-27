@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.task import Task
+from app.models.schedule import Schedule  # Cần thiết để xóa các lịch phân công liên quan
 from app import db
 from app.routes.auth import login_required
 
@@ -12,6 +13,7 @@ def index():
     return render_template('task/index.html', tasks=tasks_list)
 
 @task_bp.route('/add', methods=['GET', 'POST'])
+@login_required
 def add():
     if request.method == 'POST':
         code = request.form.get('code')
@@ -30,6 +32,7 @@ def add():
     return render_template('task/add.html')
 
 @task_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit(id):
     t = Task.query.get_or_404(id)
     if request.method == 'POST':
@@ -46,8 +49,18 @@ def edit(id):
     return render_template('task/edit.html', t=t)
 
 @task_bp.route('/delete/<int:id>')
+@login_required
 def delete(id):
     t = Task.query.get_or_404(id)
-    db.session.delete(t)
-    db.session.commit()
+    try:
+        # 1. Xóa tất cả các ca phân công đang dùng công việc này trước để tránh lỗi ràng buộc CSDL
+        Schedule.query.filter_by(task_id=id).delete()
+        
+        # 2. Xóa công việc chính
+        db.session.delete(t)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Lỗi khi xóa công việc: {e}")
+        
     return redirect(url_for('task.index'))
