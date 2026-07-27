@@ -11,11 +11,12 @@
         background-color: #eff6ff !important;
         transform: translateY(-1px);
     }
-    .modal {
-        z-index: 1060 !important;
-    }
+    /* Ẩn hoàn toàn lớp sương mờ (backdrop) của mọi Modal */
     .modal-backdrop {
-        z-index: 1050 !important;
+        display: none !important;
+    }
+    .modal {
+        background: rgba(0, 0, 0, 0.15); /* Tạo lớp phủ tối siêu nhẹ hoặc có thể xóa dòng này nếu muốn nền sáng hoàn toàn */
     }
 </style>
 
@@ -170,7 +171,7 @@
 </div>
 
 <!-- Modal Đăng Ký Ca -->
-<div class="modal fade" id="quickRegisterModal" tabindex="-1">
+<div class="modal fade" id="quickRegisterModal" tabindex="-1" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header bg-primary text-white py-3">
@@ -218,7 +219,7 @@
 </div>
 
 <!-- Modal Nạp Excel -->
-<div class="modal fade" id="importExcelModal" tabindex="-1">
+<div class="modal fade" id="importExcelModal" tabindex="-1" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header bg-info text-white py-3">
@@ -264,22 +265,5 @@
         var registerModal = bootstrap.Modal.getOrCreateInstance(modalEl);
         registerModal.show();
     }
-
-    // Tự động dọn dẹp lớp bóng mờ (backdrop) khi đóng modal
-    document.addEventListener('DOMContentLoaded', function () {
-        ['quickRegisterModal', 'importExcelModal'].forEach(function(modalId) {
-            var modalEl = document.getElementById(modalId);
-            if (modalEl) {
-                modalEl.addEventListener('hidden.bs.modal', function () {
-                    document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
-                        backdrop.remove();
-                    });
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
-                });
-            }
-        });
-    });
 </script>
 {% endblock %}
