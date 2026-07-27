@@ -15,7 +15,8 @@ schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 @login_required
 def index():
     schedules = Schedule.query.order_by(Schedule.date.desc()).all()
-    employees = Employee.query.all()
+    # CHỈ LẤY NHÂN VIÊN THƯỜNG (LOẠI BỎ ADMIN)
+    employees = Employee.query.filter(Employee.role != 'admin').all()
     tasks = Task.query.all()
     return render_template('schedule/index.html', schedules=schedules, employees=employees, tasks=tasks)
 
@@ -27,7 +28,8 @@ def weekly():
     start_of_week = today - timedelta(days=today.weekday())
     week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
     
-    employees = Employee.query.all()
+    # CHỈ LẤY NHÂN VIÊN THƯỜNG (LOẠI BỎ ADMIN)
+    employees = Employee.query.filter(Employee.role != 'admin').all()
     schedules = Schedule.query.all()
     tasks = Task.query.all()
     
@@ -62,6 +64,12 @@ def add():
             return redirect(request.referrer or url_for('schedule.weekly'))
 
         try:
+            # Kiểm tra bảo mật: Nếu tài khoản là Admin thì từ chối nhận lịch
+            emp = Employee.query.get(int(employee_id))
+            if not emp or emp.role == 'admin':
+                flash("Quản trị viên (Admin) không tham gia ca làm việc trực tiếp!", "danger")
+                return redirect(url_for('schedule.weekly'))
+
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
 
             conflict = Schedule.query.filter_by(
@@ -90,7 +98,7 @@ def add():
 
         return redirect(request.referrer or url_for('schedule.weekly'))
 
-    employees = Employee.query.all()
+    employees = Employee.query.filter(Employee.role != 'admin').all()
     tasks = Task.query.all()
     return render_template('schedule/add.html', employees=employees, tasks=tasks)
 
@@ -112,8 +120,8 @@ def auto_assign():
     start_of_week = today - timedelta(days=today.weekday())
     week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
     
-    # Lấy danh sách nhân viên và công việc đang có
-    employees = Employee.query.all()
+    # CHỈ LẤY DANH SÁCH NHÂN VIÊN THƯỜNG (LOẠI BỎ ADMIN)
+    employees = Employee.query.filter(Employee.role != 'admin').all()
     tasks = Task.query.all()
     
     if not employees or not tasks:
@@ -146,9 +154,9 @@ def auto_assign():
     try:
         db.session.commit()
         if assigned_count > 0:
-            flash(f"Thành công: Đã tự động điền {assigned_count} ca làm việc trống trong tuần này!", "success")
+            flash(f"Thành công: Đã tự động điền {assigned_count} ca làm việc trống cho nhân viên trong tuần này!", "success")
         else:
-            flash("Tuần này đã được phân công kín lịch, không có ca trống nào cần điền thêm.", "info")
+            flash("Tuần này nhân viên đã được phân công kín lịch, không có ca trống nào cần điền thêm.", "info")
     except Exception as e:
         db.session.rollback()
         flash(f"Đã xảy ra lỗi khi phân công tự động: {e}", "danger")
