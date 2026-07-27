@@ -200,7 +200,6 @@ def import_excel():
         
     if file and file.filename.endswith(('.xlsx', '.xls')):
         try:
-            # Đọc sheet đầu tiên của file Excel
             df = pd.read_excel(file, sheet_name=0, skiprows=1)
             if len(df.columns) < 4:
                 flash("Cấu trúc file Excel không hợp lệ! Cần có các cột: Thứ, Buổi, Công việc phân công, Người thực hiện.", "danger")
@@ -217,7 +216,6 @@ def import_excel():
                 task_name_str = str(row['Công việc']).strip()
                 emp_name_str = str(row['Nhân viên']).strip()
                 
-                # Trích xuất ngày từ chuỗi (VD: "Thứ Hai\n27/07" -> "27/07")
                 match = re.search(r'(\d{2}/\d{2})', thu_str)
                 if not match:
                     continue
@@ -225,24 +223,20 @@ def import_excel():
                 current_year = datetime.now().year
                 date_obj = datetime.strptime(f"{match.group(1)}/{current_year}", '%d/%m/%Y').date()
                 
-                # Tìm nhân viên theo tên
                 emp = Employee.query.filter(db.func.trim(Employee.fullname) == emp_name_str).first()
                 if not emp or emp.role == 'admin' or emp.email == 'caohoangviet738@gmail.com' or emp.department == 'Quản trị':
                     continue
                     
-                # Tìm công việc theo tên (task_name hoặc name)
                 task = Task.query.filter(
                     (db.func.trim(Task.task_name) == task_name_str) | 
                     (db.func.trim(Task.name) == task_name_str)
                 ).first()
                 
                 if not task:
-                    # Nếu công việc chưa có trong hệ thống, tự động tạo mới
                     task = Task(task_name=task_name_str)
                     db.session.add(task)
                     db.session.commit()
                     
-                # Kiểm tra trùng ca để cập nhật hoặc tạo mới
                 existing_schedule = Schedule.query.filter_by(
                     employee_id=emp.id,
                     date=date_obj,
