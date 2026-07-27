@@ -24,6 +24,10 @@ def login():
         
         emp = Employee.query.filter_by(email=email).first()
         if emp and emp.check_password(password):
+            # KIỂM TRA TRẠNG THÁI PHÊ DUYỆT CỦA ADMIN
+            if not emp.is_approved:
+                return render_template('auth/login.html', error="Tài khoản của bạn chưa được Quản trị viên phê duyệt!")
+                
             session['employee_id'] = emp.id
             session['fullname'] = emp.fullname
             session['role'] = emp.role
@@ -61,7 +65,7 @@ def register():
         # 1. Tạo mã xác nhận ngẫu nhiên 6 chữ số
         verification_code = str(random.randint(100000, 999999))
         
-        # Tạo nhân viên mới
+        # Tạo nhân viên mới với is_approved = False (Chờ Admin duyệt)
         new_emp = Employee(
             code=code,
             fullname=fullname,
@@ -69,7 +73,8 @@ def register():
             phone=phone,
             department=department,
             position=position,
-            role='employee'
+            role='employee',
+            is_approved=False  # <-- Chặn đăng nhập cho đến khi Admin duyệt
         )
         new_emp.set_password(password)
         
@@ -84,7 +89,7 @@ def register():
 Cảm ơn bạn đã đăng ký tài khoản trên hệ thống Employee Task Scheduler.
 Mã xác nhận tài khoản của bạn là: {verification_code}
 
-Vui lòng giữ bảo mật mã này để hoàn tất quá trình xác thực.
+Tài khoản của bạn hiện đang chờ Quản trị viên (Admin) phê duyệt trước khi có thể đăng nhập hệ thống.
 
 Trân trọng,
 Quản trị viên hệ thống."""
