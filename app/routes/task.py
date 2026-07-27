@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.task import Task
-from app.models.schedule import Schedule
 from app import db
 from app.routes.auth import login_required
 
@@ -51,17 +50,8 @@ def edit(id):
 @task_bp.route('/delete/<int:id>')
 @login_required
 def delete(id):
-    try:
-        # 1. Xóa trực tiếp các bản ghi schedule bằng câu lệnh SQL delete để không bị dính cơ chế theo dõi của ORM
-        db.session.query(Schedule).filter(Schedule.task_id == id).delete(synchronize_session=False)
-        
-        # 2. Xóa trực tiếp Task theo ID
-        db.session.query(Task).filter(Task.id == id).delete(synchronize_session=False)
-        
-        # 3. Commit thay đổi
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        print(f"Lỗi khi xóa công việc: {e}")
-        
+    t = Task.query.get_or_404(id)
+    # Vì đã cấu hình cascade ở Model, dòng lệnh này sẽ tự động xóa luôn các lịch trình liên quan một cách an toàn
+    db.session.delete(t)
+    db.session.commit()
     return redirect(url_for('task.index'))
