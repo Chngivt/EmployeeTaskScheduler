@@ -11,7 +11,6 @@
         background-color: #eff6ff !important;
         transform: translateY(-1px);
     }
-    /* Đảm bảo Modal luôn nổi lên trên cùng, không bị lớp mờ đè lên */
     #quickRegisterModal {
         z-index: 1060 !important;
     }
@@ -20,7 +19,6 @@
     }
 </style>
 
-<!-- Hiển thị thông báo (flash messages) nếu có -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     <div class="mb-3">
@@ -47,15 +45,15 @@
                 {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
             </div>
             
-            <!-- NÚT XÓA TẤT CẢ VÀ RANDOM LẠI -->
-            <form action="{{ url_for('schedule.reset_and_auto_assign') }}" method="POST" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA TẤT CẢ lịch hiện tại và random lại toàn bộ không?');">
+            <!-- NÚT XÓA TẤT CẢ LỊCH -->
+            <form action="{{ url_for('schedule.reset_schedule') }}" method="POST" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA TẤT CẢ lịch phân công hiện tại không?');">
                 <button type="submit" class="btn btn-outline-danger btn-sm shadow-sm rounded-pill px-3 fw-semibold">
-                    <i class="bi bi-arrow-repeat me-1"></i> Xóa & Random lại
+                    <i class="bi bi-trash me-1"></i> Xóa tất cả lịch
                 </button>
             </form>
 
             <!-- NÚT PHÂN CÔNG TỰ ĐỘNG -->
-            <form action="/schedule/auto_assign" method="POST" class="m-0" onsubmit="return confirm('Hệ thống sẽ tự động điền ngẫu nhiên công việc vào các ca Sáng & Chiều đang bị trống trong tuần này. Bạn có chắc chắn muốn thực hiện?');">
+            <form action="/schedule/auto_assign" method="POST" class="m-0" onsubmit="return confirm('Hệ thống sẽ tự động điền ngẫu nhiên công việc vào các ca đang bị trống trong tuần này. Bạn có chắc chắn muốn thực hiện?');">
                 <button type="submit" class="btn btn-primary btn-sm shadow-sm rounded-pill px-3">
                     <i class="bi bi-magic me-1"></i> Phân Công Tự Động
                 </button>
@@ -66,9 +64,8 @@
                 <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
             </a>
         </div>
-        <!-- ============================================== -->
-
     </div>
+
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-bordered mb-0 align-middle text-center" style="font-size: 12px;">
@@ -219,7 +216,6 @@
     function openRegisterModal(empId, empName, dateStr, shift) {
         var modalEl = document.getElementById('quickRegisterModal');
         
-        // CHUYỂN MODAL RA NGOÀI CÙNG THẺ BODY ĐỂ KHÔNG BỊ LỚP MỜ BẤM ĐÈ
         if (modalEl.parentElement !== document.body) {
             document.body.appendChild(modalEl);
         }
