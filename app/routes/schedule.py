@@ -11,7 +11,6 @@ from app.routes.auth import login_required
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
 def get_non_admin_employees():
-    # Lọc bỏ tài khoản Admin theo cả role, email và phòng ban
     return Employee.query.filter(
         Employee.role != 'admin',
         Employee.email != 'caohoangviet738@gmail.com',
@@ -19,7 +18,6 @@ def get_non_admin_employees():
     ).all()
 
 def cleanup_admin_schedules():
-    # Tự động xóa sạch các lịch phân công lỡ gán cho admin trước đó
     admin_employees = Employee.query.filter(
         (Employee.role == 'admin') | 
         (Employee.email == 'caohoangviet738@gmail.com') | 
@@ -141,7 +139,7 @@ def auto_assign():
         flash("Lỗi: Cần có ít nhất 1 nhân viên và 1 công việc trong hệ thống để thực hiện phân công tự động!", "danger")
         return redirect(url_for('schedule.weekly'))
         
-    shifts = ['Sáng', 'Chiều'] 
+    shifts = ['Sáng', 'Chiều', 'Tối'] 
     assigned_count = 0
     
     for d in week_dates:
@@ -171,19 +169,16 @@ def auto_assign():
         
     return redirect(url_for('schedule.weekly'))
 
-# --- 6. XÓA TẤT CẢ LỊCH VÀ PHÂN CÔNG RANDOM LẠI ---
-@schedule_bp.route('/reset_and_auto_assign', methods=['POST'])
+# --- 6. XÓA TẤT CẢ LỊCH (KHÔNG RANDOM) ---
+@schedule_bp.route('/reset', methods=['POST'])
 @login_required
-def reset_and_auto_assign():
+def reset_schedule():
     try:
-        # Xóa toàn bộ lịch hiện có trong CSDL
         Schedule.query.delete()
         db.session.commit()
-        flash("Đã xóa toàn bộ lịch cũ thành công!", "info")
+        flash("Đã xóa toàn bộ lịch phân công thành công!", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f"Lỗi khi xóa lịch cũ: {e}", "danger")
-        return redirect(url_for('schedule.weekly'))
-
-    # Sau khi xóa xong, gọi tiếp hàm phân công tự động để tạo lịch random mới
-    return auto_assign()
+        flash(f"Lỗi khi xóa lịch: {e}", "danger")
+        
+    return redirect(url_for('schedule.weekly'))
