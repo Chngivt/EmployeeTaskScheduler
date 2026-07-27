@@ -1,5 +1,7 @@
 import json
 import random
+import re
+import pandas as pd
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash
 from app import db
@@ -180,5 +182,92 @@ def reset_schedule():
     except Exception as e:
         db.session.rollback()
         flash(f"Lỗi khi xóa lịch: {e}", "danger")
+        
+    return redirect(url_for('schedule.weekly'))
+
+# --- 7. NẠP EXCEL TỰ ĐỘNG PHÂN CÔNG ---
+@schedule_bp.route('/import_excel', methods=['POST'])
+@login_required
+def import_excel():
+    if 'excel_file' not in request.files:
+        flash("Không tìm thấy file tải lên!", "danger")
+        return redirect(url_for('schedule.weekly'))
+        
+    file = request.files['excel_file']
+    if file.filename == '':
+        flash("Bạn chưa chọn file Excel nào!", "danger")
+        return redirect(url_for('schedule.weekly'))
+        
+    if file and file.filename.endswith(('.xlsx', '.xls')):
+        try:
+            # Đọc sheet đầu tiên của file Excel
+            df = pd.read_excel(file, sheet_name=0, skiprows=1)
+            if len(df.columns) < 4:
+                flash("Cấu trúc file Excel không hợp lệ! Cần có các cột: Thứ, Buổi, Công việc phân công, Người thực hiện.", "danger")
+                return redirect(url_for('schedule.weekly'))
+                
+            df.columns = ['Thứ', 'Buổi', 'Công việc', 'Nhân viên']
+            df['Thứ'] = df['Thứ'].ffill()
+            df['Buổi'] = df['Buổi'].ffill()
+            
+            imported_count = 0
+            for _, row in df.iterrows():
+                thu_str = str(row['Thứ'])
+                buoi_str = str(row['Buổi']).strip()
+                task_name_str = str(row['Công việc']).strip()
+                emp_name_str = str(row['Nhân viên']).strip()
+                
+                # Trích xuất ngày từ chuỗi (VD: "Thứ Hai\n27/07" -> "27/07")
+                match = re.search(r'(\d{2}/\d{2})', thu_str)
+                if not match:
+                    continue
+                
+                current_year = datetime.now().year
+                date_obj = datetime.strptime(f"{match.group(1)}/{current_year}", '%d/%m/%Y').date()
+                
+                # Tìm nhân viên theo tên
+                emp = Employee.query.filter(db.func.trim(Employee.fullname) == emp_name_str).first()
+                if not emp or emp.role == 'admin' or emp.email == 'caohoangviet738@gmail.com' or emp.department == 'Quản trị':
+                    continue
+                    
+                # Tìm công việc theo tên (task_name hoặc name)
+                task = Task.query.filter(
+                    (db.func.trim(Task.task_name) == task_name_str) | 
+                    (db.func.trim(Task.name) == task_name_str)
+                ).first()
+                
+                if not task:
+                    # Nếu công việc chưa có trong hệ thống, tự động tạo mới
+                    task = Task(task_name=task_name_str)
+                    db.session.add(task)
+                    db.session.commit()
+                    
+                # Kiểm tra trùng ca để cập nhật hoặc tạo mới
+                existing_schedule = Schedule.query.filter_by(
+                    employee_id=emp.id,
+                    date=date_obj,
+                    shift=buoi_str
+                ).first()
+                
+                if existing_schedule:
+                    existing_schedule.task_id = task.id
+                else:
+                    new_sched = Schedule(
+                        employee_id=emp.id,
+                        task_id=task.id,
+                        date=date_obj,
+                        shift=buoi_str
+                    )
+                    db.session.add(new_sched)
+                
+                imported_count += 1
+                
+            db.session.commit()
+            flash(f"Nạp file Excel thành công! Đã cập nhật {imported_count} phân công ca làm việc.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Lỗi khi xử lý file Excel: {e}", "danger")
+    else:
+        flash("Chỉ hỗ trợ định dạng file Excel (.xlsx, .xls)!", "warning")
         
     return redirect(url_for('schedule.weekly'))
