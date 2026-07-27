@@ -3,90 +3,90 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
-        <h4 class="fw-bold text-dark mb-1"><i class="bi bi-people-fill text-primary me-2"></i> Danh Sách Nhân Viên</h4>
-        <small class="text-muted">Quản lý hồ sơ, phòng ban và tài khoản nhân sự</small>
+        <h4 class="fw-bold text-dark mb-1"><i class="bi bi-pencil-square text-primary me-2"></i> Chỉnh Sửa Nhân Viên</h4>
+        <small class="text-muted">Cập nhật thông tin chi tiết nhân sự</small>
     </div>
-    
-    <!-- CHỈ ADMIN MỚI THẤY NÚT THÊM NHÂN VIÊN -->
-    {% if session.get('role') == 'admin' %}
-    <a href="/employee/add" class="btn btn-primary shadow-sm rounded-pill px-3">
-        <i class="bi bi-person-plus-fill me-1"></i> Thêm Nhân Viên Mới
+    <a href="/employee" class="btn btn-outline-secondary shadow-sm rounded-pill px-3">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại
     </a>
-    {% endif %}
 </div>
 
-<div class="card shadow-sm border-0 rounded-4">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-center" style="font-size: 13px;">
-                <thead class="table-light">
-                    <tr>
-                        <th class="py-3 text-start ps-4">Nhân viên</th>
-                        <th class="py-3 text-start">Email</th>
-                        <th class="py-3">Số điện thoại</th>
-                        <th class="py-3">Phòng ban</th>
-                        <th class="py-3">Chức vụ</th>
-                        
-                        <!-- CHỈ ADMIN MỚI THẤY CỘT THAO TÁC -->
-                        {% if session.get('role') == 'admin' %}
-                        <th class="py-3 text-end pe-4">Thao tác</th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if employees %}
-                        {% for emp in employees %}
-                        <tr>
-                            <td class="text-start ps-4 py-3">
-                                <div class="d-flex align-items-center">
-                                    <!-- HIỂN THỊ AVATAR HOẶC CHỮ CÁI ĐẦU -->
-                                    {% if emp.avatar %}
-                                        <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}" 
-                                             alt="{{ emp.fullname }}" 
-                                             class="rounded-circle me-3 border shadow-sm" 
-                                             style="width: 40px; height: 40px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 fw-bold" 
-                                             style="width: 40px; height: 40px; font-size: 15px;">
-                                            {{ emp.fullname[0]|upper }}
-                                        </div>
-                                    {% endif %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4 p-md-5">
+                
+                {% if error %}
+                <div class="alert alert-danger shadow-sm rounded-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+                </div>
+                {% endif %}
 
-                                    <div>
-                                        <strong class="text-dark d-block fw-bold">{{ emp.fullname }}</strong>
-                                        <small class="text-muted" style="font-size: 11px;">Mã: {{ emp.code }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="text-start text-secondary">{{ emp.email }}</td>
-                            <td><span class="badge bg-light text-dark border font-monospace px-2 py-1">{{ emp.phone }}</span></td>
-                            <td><span class="badge bg-info bg-opacity-10 text-info fw-bold px-2 py-1">{{ emp.department }}</span></td>
-                            <td class="fw-semibold text-dark">{{ emp.position }}</td>
-                            
-                            <!-- CHỈ ADMIN MỚI THẤY NÚT SỬA VÀ XÓA -->
-                            {% if session.get('role') == 'admin' %}
-                            <td class="text-end pe-4">
-                                <!-- NÚT CHỈNH SỬA NHÂN VIÊN -->
-                                <a href="/employee/edit/{{ emp.id }}" class="btn btn-outline-primary btn-sm rounded-circle p-1 px-2 me-1" title="Chỉnh sửa">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
+                <form action="/employee/edit/{{ emp.id }}" method="POST" enctype="multipart/form-data">
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Mã nhân viên</label>
+                            <input type="text" class="form-control bg-light" value="{{ emp.code }}" disabled readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" name="fullname" class="form-control" value="{{ emp.fullname }}" required>
+                        </div>
+                    </div>
 
-                                <!-- NÚT XÓA NHÂN VIÊN -->
-                                <a href="/employee/delete/{{ emp.id }}" class="btn btn-outline-danger btn-sm rounded-circle p-1 px-2" onclick="return confirm('Bạn có chắc chắn muốn xóa nhân viên này?')" title="Xóa">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <!-- Điều chỉnh colspan tùy theo role để hiển thị thông báo đẹp hơn -->
-                            <td colspan="{% if session.get('role') == 'admin' %}6{% else %}5{% endif %}" class="text-muted py-5 text-center">Chưa có nhân viên nào trong danh sách.</td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" value="{{ emp.email }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Số điện thoại</label>
+                            <input type="text" name="phone" class="form-control" value="{{ emp.phone or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Phòng ban</label>
+                            <select name="department" class="form-select">
+                                <option value="Quản lý" {% if emp.department == 'Quản lý' %}selected{% endif %}>Quản lý</option>
+                                <option value="Kỹ Thuật" {% if emp.department == 'Kỹ Thuật' %}selected{% endif %}>Kỹ Thuật</option>
+                                <option value="Bán hàng" {% if emp.department == 'Bán hàng' %}selected{% endif %}>Bán hàng</option>
+                                <option value="Marketing" {% if emp.department == 'Marketing' %}selected{% endif %}>Marketing</option>
+                                <option value="Quản trị" {% if emp.department == 'Quản trị' %}selected{% endif %}>Quản trị</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Chức vụ</label>
+                            <input type="text" name="position" class="form-control" value="{{ emp.position or '' }}">
+                        </div>
+                    </div>
+
+                    <hr class="text-muted opacity-25 my-4">
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Vai trò Hệ thống</label>
+                            <select name="role" class="form-select">
+                                <option value="employee" {% if emp.role == 'employee' %}selected{% endif %}>Nhân viên thường</option>
+                                <option value="admin" {% if emp.role == 'admin' %}selected{% endif %}>Quản trị viên (Admin)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Mật khẩu mới (Tùy chọn)</label>
+                            <input type="password" name="password" class="form-control" placeholder="Để trống nếu không đổi">
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold rounded-pill shadow-sm">
+                            <i class="bi bi-save me-1"></i> Lưu Thay Đổi
+                        </button>
+                    </div>
+
+                </form>
+            </div>
         </div>
     </div>
 </div>
