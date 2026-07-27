@@ -227,10 +227,8 @@ def import_excel():
                 if not emp or emp.role == 'admin' or emp.email == 'caohoangviet738@gmail.com' or emp.department == 'Quản trị':
                     continue
                     
-                task = Task.query.filter(
-                    (db.func.trim(Task.task_name) == task_name_str) | 
-                    (db.func.trim(Task.name) == task_name_str)
-                ).first()
+                # Chỉ tra cứu theo Task.task_name đúng với mô hình cơ sở dữ liệu
+                task = Task.query.filter(db.func.trim(Task.task_name) == task_name_str).first()
                 
                 if not task:
                     task = Task(task_name=task_name_str)
