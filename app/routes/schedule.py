@@ -53,19 +53,17 @@ def weekly():
     schedules = Schedule.query.all()
     tasks = Task.query.all()
     
-    schedule_dict = {}
+    # Lưu toàn bộ object Schedule vào dictionary để template có thể gọi và hiển thị nút xóa trực tiếp
+    schedule_objs = {}
     for s in schedules:
         if s.date:
             date_key = s.date.strftime('%Y-%m-%d') if hasattr(s.date, 'strftime') else str(s.date)
-            t_name = "Có lịch"
-            if s.task:
-                t_name = getattr(s.task, 'task_name', None) or getattr(s.task, 'name', None) or "Có lịch"
-            schedule_dict[(s.employee_id, date_key, s.shift)] = t_name
+            schedule_objs[(s.employee_id, date_key, s.shift)] = s
             
     return render_template('schedule/weekly.html', 
                            employees=employees,
                            week_dates=week_dates,
-                           schedule_dict=schedule_dict,
+                           schedule_objs=schedule_objs,
                            tasks=tasks)
 
 # --- 3. XỬ LÝ THÊM/ĐĂNG KÝ PHÂN CÔNG ---
@@ -117,7 +115,7 @@ def add():
     tasks = Task.query.all()
     return render_template('schedule/add.html', employees=employees, tasks=tasks)
 
-# --- 4. XÓA PHÂN CÔNG ---
+# --- 4. XÓA PHÂN CÔNG THEO ID ---
 @schedule_bp.route('/delete/<int:id>')
 @login_required
 def delete(id):
@@ -126,7 +124,34 @@ def delete(id):
     db.session.commit()
     return redirect(request.referrer or url_for('schedule.weekly'))
 
-# --- 5. PHÂN CÔNG TỰ ĐỘNG ---
+# --- 5. XÓA CA TRỰC TIẾP TRÊN BẢNG LỊCH TUẦN ---
+@schedule_bp.route('/delete_info', methods=['GET'])
+@login_required
+def delete_by_info():
+    employee_id = request.args.get('employee_id')
+    date_str = request.args.get('date')
+    shift = request.args.get('shift')
+    
+    if employee_id and date_str and shift:
+        try:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            schedule_item = Schedule.query.filter_by(
+                employee_id=int(employee_id),
+                date=date_obj,
+                shift=shift
+            ).first()
+            
+            if schedule_item:
+                db.session.delete(schedule_item)
+                db.session.commit()
+                flash("Đã hủy ca làm việc thành công!", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Lỗi khi hủy ca: {e}", "danger")
+            
+    return redirect(url_for('schedule.weekly'))
+
+# --- 6. PHÂN CÔNG TỰ ĐỘNG ---
 @schedule_bp.route('/auto_assign', methods=['POST'])
 @login_required
 def auto_assign():
@@ -171,7 +196,7 @@ def auto_assign():
         
     return redirect(url_for('schedule.weekly'))
 
-# --- 6. XÓA TẤT CẢ LỊCH (KHÔNG RANDOM) ---
+# --- 7. XÓA TẤT CẢ LỊCH (KHÔNG RANDOM) ---
 @schedule_bp.route('/reset', methods=['POST'])
 @login_required
 def reset_schedule():
@@ -185,7 +210,7 @@ def reset_schedule():
         
     return redirect(url_for('schedule.weekly'))
 
-# --- 7. NẠP EXCEL TỰ ĐỘNG PHÂN CÔNG ---
+# --- 8. NẠP EXCEL TỰ ĐỘNG PHÂN CÔNG ---
 @schedule_bp.route('/import_excel', methods=['POST'])
 @login_required
 def import_excel():
@@ -227,7 +252,6 @@ def import_excel():
                 if not emp or emp.role == 'admin' or emp.email == 'caohoangviet738@gmail.com' or emp.department == 'Quản trị':
                     continue
                     
-                # Chỉ tra cứu theo Task.task_name đúng với mô hình cơ sở dữ liệu
                 task = Task.query.filter(db.func.trim(Task.task_name) == task_name_str).first()
                 
                 if not task:
