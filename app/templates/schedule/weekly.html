@@ -11,7 +11,7 @@
         background-color: #eff6ff !important;
         transform: translateY(-1px);
     }
-    #quickRegisterModal, #importExcelModal {
+    .modal {
         z-index: 1060 !important;
     }
     .modal-backdrop {
@@ -264,5 +264,22 @@
         var registerModal = bootstrap.Modal.getOrCreateInstance(modalEl);
         registerModal.show();
     }
+
+    // Tự động dọn dẹp lớp bóng mờ (backdrop) khi đóng modal
+    document.addEventListener('DOMContentLoaded', function () {
+        ['quickRegisterModal', 'importExcelModal'].forEach(function(modalId) {
+            var modalEl = document.getElementById(modalId);
+            if (modalEl) {
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+                        backdrop.remove();
+                    });
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                });
+            }
+        });
+    });
 </script>
 {% endblock %}
