@@ -18,7 +18,6 @@ def allowed_file(filename):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Kiểm tra role trong session
         if session.get('role') != 'admin':
             flash('Chỉ Quản trị viên (Admin) mới có quyền thực hiện thao tác này!', 'danger')
             return redirect(url_for('employee.index'))
@@ -31,6 +30,36 @@ def admin_required(f):
 def index():
     employees = Employee.query.order_by(Employee.id.desc()).all()
     return render_template('employee/index.html', employees=employees)
+
+# --- TRANG XEM DANH SÁCH CHỜ DUYỆT (CHỈ ADMIN) ---
+@employee_bp.route('/pending-users')
+@login_required
+@admin_required
+def pending_users():
+    pending_list = Employee.query.filter_by(is_approved=False).all()
+    return render_template('employee/pending.html', pending_list=pending_list)
+
+# --- DUYỆT TÀI KHOẢN (CHỈ ADMIN) ---
+@employee_bp.route('/approve/<int:id>')
+@login_required
+@admin_required
+def approve_user(id):
+    emp = Employee.query.get_or_404(id)
+    emp.is_approved = True
+    db.session.commit()
+    flash(f'Đã phê duyệt tài khoản cho nhân viên: {emp.fullname}', 'success')
+    return redirect(url_for('employee.pending_users'))
+
+# --- TỪ CHỐI / XÓA TÀI KHOẢN CHỜ DUYỆT (CHỈ ADMIN) ---
+@employee_bp.route('/reject/<int:id>')
+@login_required
+@admin_required
+def reject_user(id):
+    emp = Employee.query.get_or_404(id)
+    db.session.delete(emp)
+    db.session.commit()
+    flash(f'Đã từ chối và xóa yêu cầu đăng ký của: {emp.fullname}', 'danger')
+    return redirect(url_for('employee.pending_users'))
 
 # --- 2. THÊM NHÂN VIÊN MỚI (CHỈ ADMIN) ---
 @employee_bp.route('/add', methods=['GET', 'POST'])
@@ -73,7 +102,8 @@ def add():
             department=department,
             position=position,
             avatar=avatar_filename,
-            role='employee'
+            role='employee',
+            is_approved=True  # Tài khoản do Admin trực tiếp thêm sẽ được duyệt sẵn
         )
         new_emp.set_password('123456')
 
