@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.task import Task
+from app.models.schedule import Schedule  # Bổ sung import model Schedule để xử lý xóa ca liên quan
 from app import db
 from app.routes.auth import login_required
 
@@ -51,7 +52,17 @@ def edit(id):
 @login_required
 def delete(id):
     t = Task.query.get_or_404(id)
-    # Vì đã cấu hình cascade ở Model, dòng lệnh này sẽ tự động xóa luôn các lịch trình liên quan một cách an toàn
-    db.session.delete(t)
-    db.session.commit()
+    try:
+        # 1. Xóa tất cả các lịch làm việc đang sử dụng công việc này trước
+        Schedule.query.filter_by(task_id=id).delete()
+        
+        # 2. Xóa công việc chính
+        db.session.delete(t)
+        
+        # 3. Lưu lại thay đổi
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Lỗi khi xóa công việc: {e}")
+        
     return redirect(url_for('task.index'))
