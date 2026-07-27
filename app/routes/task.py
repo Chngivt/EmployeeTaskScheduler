@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.task import Task
-from app.models.schedule import Schedule  # Cần thiết để xóa các lịch phân công liên quan
+from app.models.schedule import Schedule
 from app import db
 from app.routes.auth import login_required
 
@@ -51,13 +51,14 @@ def edit(id):
 @task_bp.route('/delete/<int:id>')
 @login_required
 def delete(id):
-    t = Task.query.get_or_404(id)
     try:
-        # 1. Xóa tất cả các ca phân công đang dùng công việc này trước để tránh lỗi ràng buộc CSDL
-        Schedule.query.filter_by(task_id=id).delete()
+        # 1. Xóa trực tiếp các bản ghi schedule bằng câu lệnh SQL delete để không bị dính cơ chế theo dõi của ORM
+        db.session.query(Schedule).filter(Schedule.task_id == id).delete(synchronize_session=False)
         
-        # 2. Xóa công việc chính
-        db.session.delete(t)
+        # 2. Xóa trực tiếp Task theo ID
+        db.session.query(Task).filter(Task.id == id).delete(synchronize_session=False)
+        
+        # 3. Commit thay đổi
         db.session.commit()
     except Exception as e:
         db.session.rollback()
