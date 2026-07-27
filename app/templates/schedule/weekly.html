@@ -47,6 +47,13 @@
                 {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
             </div>
             
+            <!-- NÚT XÓA TẤT CẢ VÀ RANDOM LẠI -->
+            <form action="{{ url_for('schedule.reset_and_auto_assign') }}" method="POST" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA TẤT CẢ lịch hiện tại và random lại toàn bộ không?');">
+                <button type="submit" class="btn btn-outline-danger btn-sm shadow-sm rounded-pill px-3 fw-semibold">
+                    <i class="bi bi-arrow-repeat me-1"></i> Xóa & Random lại
+                </button>
+            </form>
+
             <!-- NÚT PHÂN CÔNG TỰ ĐỘNG -->
             <form action="/schedule/auto_assign" method="POST" class="m-0" onsubmit="return confirm('Hệ thống sẽ tự động điền ngẫu nhiên công việc vào các ca Sáng & Chiều đang bị trống trong tuần này. Bạn có chắc chắn muốn thực hiện?');">
                 <button type="submit" class="btn btn-primary btn-sm shadow-sm rounded-pill px-3">
