@@ -26,9 +26,18 @@
             <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-calendar3 text-primary me-2"></i> Lịch Phân Công Tuần</h5>
             <small class="text-muted">Nhấp trực tiếp vào ô trống để đăng ký phân công ca làm việc</small>
         </div>
-        <div class="badge bg-light text-dark border px-3 py-2 fw-normal rounded-pill">
-            {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
+        
+        <!-- === ĐÃ THÊM NÚT XUẤT EXCEL VÀO KHU VỰC NÀY === -->
+        <div class="d-flex align-items-center gap-2">
+            <div class="badge bg-light text-dark border px-3 py-2 fw-normal rounded-pill">
+                {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
+            </div>
+            <a href="/export/weekly" class="btn btn-success btn-sm shadow-sm rounded-pill px-3">
+                <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+            </a>
         </div>
+        <!-- ============================================== -->
+
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -51,7 +60,6 @@
                         <tr>
                             <td class="text-start ps-3 py-3 bg-white">
                                 <div class="d-flex align-items-center">
-                                    <!-- ================= HOÀN THIỆN ĐOẠN HIỂN THỊ AVATAR Ở ĐÂY ================= -->
                                     {% if emp.avatar %}
                                         <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}"
                                              alt="{{ emp.fullname }}"
@@ -62,8 +70,6 @@
                                             {{ emp.fullname[0]|upper }}
                                         </div>
                                     {% endif %}
-                                    <!-- ========================================================================= -->
-
 
                                     <div class="text-truncate" style="max-width: 110px;">
                                         <h6 class="mb-0 fw-bold text-dark text-truncate" style="font-size: 12px;" title="{{ emp.fullname }}">{{ emp.fullname }}</h6>
@@ -182,7 +188,7 @@
 <script>
     function openRegisterModal(empId, empName, dateStr, shift) {
         var modalEl = document.getElementById('quickRegisterModal');
-       
+        
         // CHUYỂN MODAL RA NGOÀI CÙNG THẺ BODY ĐỂ KHÔNG BỊ LỚP MỜ BẤM ĐÈ
         if (modalEl.parentElement !== document.body) {
             document.body.appendChild(modalEl);
@@ -192,7 +198,7 @@
         document.getElementById('modal_date').value = dateStr;
         document.getElementById('modal_shift').value = shift;
         document.getElementById('modal_emp_name_display').innerText = empName;
-       
+        
         const dateParts = dateStr.split('-');
         document.getElementById('modal_date_display').innerText = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
         document.getElementById('modal_shift_display').innerText = 'Ca ' + shift;
