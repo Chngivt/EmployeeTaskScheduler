@@ -18,6 +18,9 @@ class Employee(db.Model):
     # Trường mật khẩu và phân quyền
     password_hash = db.Column(db.String(255), nullable=False, default='pbkdf2:sha256:600000$defaultpassword')
     role = db.Column(db.String(20), default='employee') # 'admin' hoặc 'employee'
+    
+    # Thêm trường trạng thái duyệt tài khoản (True: đã duyệt/mặc định, False: chờ admin duyệt)
+    is_approved = db.Column(db.Boolean, default=True, nullable=False)
 
     schedules = db.relationship('Schedule', backref='employee', lazy=True)
 
