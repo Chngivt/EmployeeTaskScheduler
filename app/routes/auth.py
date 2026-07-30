@@ -5,9 +5,9 @@ from app.models.employee import Employee
 from app import db, mail
 from flask_mail import Message
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-# --- HÀM BẢO VỆ ĐĂNG NHẬP ---
+# --- HÀM KIỂM TRA ĐĂNG NHẬP ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -26,13 +26,13 @@ def login():
         if emp and emp.check_password(password):
             # KIỂM TRA TRẠNG THÁI PHÊ DUYỆT CỦA ADMIN
             if not emp.is_approved:
-                return render_template('auth/login.html', error="Tài khoản của bạn chưa được Quản trị viên phê duyệt!")
+                return render_template('auth/login.html', error="Tài khoản chờ Quản trị viên phê duyệt!")
                 
             session['employee_id'] = emp.id
             session['fullname'] = emp.fullname
             session['role'] = emp.role
             
-            # --- LƯU ĐỊA CHỈ IP VÀO SESSION ---
+            # --- LƯU TRỮ ĐỊA CHỈ IP VÀO SESSION ---
             if request.environ.get('HTTP_X_FORWARDED_FOR'):
                 ip_address = request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0]
             else:
@@ -61,7 +61,7 @@ def register():
         existing_emp = Employee.query.filter((Employee.email == email) | (Employee.code == code)).first()
         if existing_emp:
             return render_template('auth/register.html', error="Mã nhân viên hoặc Email đã tồn tại trong hệ thống!")
-        
+            
         # 1. Tạo mã xác nhận ngẫu nhiên 6 chữ số
         verification_code = str(random.randint(100000, 999999))
         
@@ -74,29 +74,21 @@ def register():
             department=department,
             position=position,
             role='employee',
-            is_approved=False  # <-- Chặn đăng nhập cho đến khi Admin duyệt
+            is_approved=False
         )
         new_emp.set_password(password)
         
         db.session.add(new_emp)
         db.session.commit()
         
-        # 2. Tự động gửi mã xác nhận về Gmail của nhân viên
+        # 2. Gửi email xác thực Gmail của nhân viên
         try:
-            msg = Message('Mã Xác Nhận Tài Khoản - Employee Task Scheduler', recipients=[email])
-            msg.body = f"""Xin chào {fullname},
-
-Cảm ơn bạn đã đăng ký tài khoản trên hệ thống Employee Task Scheduler.
-Mã xác nhận tài khoản của bạn là: {verification_code}
-
-Tài khoản của bạn hiện đang chờ Quản trị viên (Admin) phê duyệt trước khi có thể đăng nhập hệ thống.
-
-Trân trọng,
-Quản trị viên hệ thống."""
+            msg = Message('Mã Xác Thực Tài Khoản - Employee Task Scheduler', recipients=[email])
+            msg.body = f"""Xin chào {fullname}, bạn đã đăng ký tài khoản trong Employee Task Scheduler. Mã xác thực của bạn là: {verification_code}. Tài khoản hiện đang chờ Quản trị viên (Admin) phê duyệt trước khi có thể đăng nhập."""
             mail.send(msg)
         except Exception as e:
-            print("Lỗi gửi mail (kiểm tra lại cấu hình SMTP trong config.py):", e)
-        
+            print("Lỗi gửi mail:", e)
+            
         return redirect(url_for('auth.login'))
         
     return render_template('auth/register.html')
