@@ -68,6 +68,11 @@
             <a href="/export/weekly" class="btn btn-success btn-sm shadow-sm rounded-pill px-3">
                 <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
             </a>
+            
+            <!-- NÚT XUẤT EXCEL BẢNG LƯƠNG -->
+            <a href="/employee/salary" class="btn btn-warning btn-sm shadow-sm rounded-pill px-3 fw-semibold">
+                <i class="bi bi-cash-coin me-1"></i> Tính Lương (Excel)
+            </a>
         </div>
     </div>
 
@@ -122,7 +127,10 @@
                                         <span class="badge bg-primary text-white fw-bold" style="font-size: 8px;">Sáng</span>
                                         <a href="{{ url_for('schedule.delete_by_info', employee_id=emp.id, date=date_key, shift='Sáng') }}" class="text-danger fw-bold text-decoration-none px-1" title="Hủy ca này" onclick="return confirm('Bạn có chắc chắn muốn hủy ca này không?');"><i class="bi bi-x-circle-fill" style="font-size: 11px;"></i></a>
                                     </div>
-                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_sang.task.task_name }}">{{ sched_sang.task.task_name }}</div>
+                                    <!-- THÊM ICON TĂNG CA CHO CA SÁNG -->
+                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_sang.task.task_name }}">
+                                        {{ sched_sang.task.task_name }} {% if sched_sang.is_overtime %}<i class="bi bi-fire text-danger ms-1" title="Tăng ca"></i>{% endif %}
+                                    </div>
                                 </div>
                                 {% else %}
                                 <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ date_key }}', 'Sáng')">
@@ -139,7 +147,10 @@
                                         <span class="badge bg-warning text-dark fw-bold" style="font-size: 8px;">Chiều</span>
                                         <a href="{{ url_for('schedule.delete_by_info', employee_id=emp.id, date=date_key, shift='Chiều') }}" class="text-danger fw-bold text-decoration-none px-1" title="Hủy ca này" onclick="return confirm('Bạn có chắc chắn muốn hủy ca này không?');"><i class="bi bi-x-circle-fill" style="font-size: 11px;"></i></a>
                                     </div>
-                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_chieu.task.task_name }}">{{ sched_chieu.task.task_name }}</div>
+                                    <!-- THÊM ICON TĂNG CA CHO CA CHIỀU -->
+                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_chieu.task.task_name }}">
+                                        {{ sched_chieu.task.task_name }} {% if sched_chieu.is_overtime %}<i class="bi bi-fire text-danger ms-1" title="Tăng ca"></i>{% endif %}
+                                    </div>
                                 </div>
                                 {% else %}
                                 <div class="p-1 mb-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ date_key }}', 'Chiều')">
@@ -156,7 +167,10 @@
                                         <span class="badge bg-dark text-white fw-bold" style="font-size: 8px;">Tối</span>
                                         <a href="{{ url_for('schedule.delete_by_info', employee_id=emp.id, date=date_key, shift='Tối') }}" class="text-danger fw-bold text-decoration-none px-1" title="Hủy ca này" onclick="return confirm('Bạn có chắc chắn muốn hủy ca này không?');"><i class="bi bi-x-circle-fill" style="font-size: 11px;"></i></a>
                                     </div>
-                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_toi.task.task_name }}">{{ sched_toi.task.task_name }}</div>
+                                    <!-- THÊM ICON TĂNG CA CHO CA TỐI -->
+                                    <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_toi.task.task_name }}">
+                                        {{ sched_toi.task.task_name }} {% if sched_toi.is_overtime %}<i class="bi bi-fire text-danger ms-1" title="Tăng ca"></i>{% endif %}
+                                    </div>
                                 </div>
                                 {% else %}
                                 <div class="p-1 rounded border text-start bg-white shadow-sm shift-box-clickable" style="min-height: 42px;" onclick="openRegisterModal('{{ emp.id }}', '{{ emp.fullname }}', '{{ date_key }}', 'Tối')">
@@ -218,6 +232,16 @@
                             {% endfor %}
                         </select>
                     </div>
+
+                    <!-- THÊM CHECKBOX ĐÁNH DẤU TĂNG CA -->
+                    <div class="mb-3">
+                        <div class="form-check bg-white border p-2 rounded shadow-sm">
+                            <input class="form-check-input ms-1" type="checkbox" name="is_overtime" id="is_overtime" value="1">
+                            <label class="form-check-label ms-2 text-danger fw-bold small" for="is_overtime">
+                                <i class="bi bi-fire"></i> Đánh dấu là ca TĂNG CA (Lương x 1.5)
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
                     <button type="button" class="btn btn-light btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
@@ -267,6 +291,9 @@
         document.getElementById('modal_date').value = dateStr;
         document.getElementById('modal_shift').value = shift;
         document.getElementById('modal_emp_name_display').innerText = empName;
+        
+        // Reset checkbox tăng ca mỗi khi mở bảng mới
+        document.getElementById('is_overtime').checked = false;
         
         const dateParts = dateStr.split('-');
         document.getElementById('modal_date_display').innerText = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
