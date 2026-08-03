@@ -6,6 +6,7 @@ class Schedule(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     # Khóa ngoại liên kết tới bảng Employee và Task
+    is_overtime = db.Column(db.Boolean, default=False)
     employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
     
