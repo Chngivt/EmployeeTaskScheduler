@@ -1,5 +1,6 @@
 import os
-from flask import Flask, render_template
+# Đã thêm session, redirect vào đây
+from flask import Flask, render_template, session, redirect, url_for 
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_mail import Mail  
@@ -62,9 +63,14 @@ def create_app():
     from app.routes.export import export_bp
     app.register_blueprint(export_bp)
 
+    # =========================================================
     # --- ROUTE TRANG CHỦ (DASHBOARD) ---
     @app.route('/')
     def dashboard():
+        # KHÓA BẢO VỆ: Nếu chưa đăng nhập thì ép chuyển hướng về trang Login
+        if 'fullname' not in session:
+            return redirect('/auth/login')
+
         from datetime import datetime, timedelta
         
         total_emp = Employee.query.count()
@@ -79,7 +85,6 @@ def create_app():
         start_of_week = today - timedelta(days=today.weekday())
         week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
         
-        # ================= ĐỌAN ĐÃ SỬA LỖI =================
         schedule_dict = {}
         for s in schedules:
             if s.date:
@@ -92,7 +97,6 @@ def create_app():
                     t_name = getattr(s.task, 'task_name', None) or getattr(s.task, 'name', None) or "Có lịch"
                 
                 schedule_dict[(s.employee_id, date_key, s.shift)] = t_name
-        # =====================================================
             
         return render_template('dashboard.html', 
                                total_emp=total_emp, 
@@ -106,6 +110,10 @@ def create_app():
     # --- ROUTE BÁO CÁO ---
     @app.route('/report')
     def report():
+        # KHÓA BẢO VỆ
+        if 'fullname' not in session:
+            return redirect('/auth/login')
+
         total_emp = Employee.query.count()
         total_task = Task.query.count()
         total_schedule = Schedule.query.count()
@@ -117,6 +125,10 @@ def create_app():
     # --- ROUTE CÀI ĐẶT ---
     @app.route('/settings')
     def settings():
+        # KHÓA BẢO VỆ
+        if 'fullname' not in session:
+            return redirect('/auth/login')
+
         return render_template('settings.html')
 
     # --- API THỐNG KÊ ---
