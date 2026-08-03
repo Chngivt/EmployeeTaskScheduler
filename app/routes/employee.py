@@ -1,10 +1,14 @@
 import os
-from datetime import datetime
+import pandas as pd
+import calendar
+from io import BytesIO
+from datetime import datetime, date
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session, send_file
 from werkzeug.utils import secure_filename
 from app import db
 from app.models.employee import Employee
+from app.models.schedule import Schedule
 from app.routes.auth import login_required
 
 employee_bp = Blueprint('employee', __name__, url_prefix='/employee')
@@ -174,3 +178,66 @@ def delete(id):
     db.session.delete(emp)
     db.session.commit()
     return redirect(url_for('employee.index'))
+
+# --- 5. TÍNH LƯƠNG VÀ XUẤT EXCEL (CHỈ ADMIN) ---
+@employee_bp.route('/salary')
+@login_required
+@admin_required
+def export_salary():
+    # 1. Đặt mức lương cho 1 ca làm việc
+    SHIFT_RATE = 150000  # 150.000 VNĐ / 1 ca
+    
+    today = date.today()
+    current_month = today.month
+    current_year = today.year
+    
+    # Tính ngày đầu tháng và cuối tháng
+    _, last_day = calendar.monthrange(current_year, current_month)
+    start_date = date(current_year, current_month, 1)
+    end_date = date(current_year, current_month, last_day)
+
+    # 2. Truy vấn danh sách nhân viên (bỏ qua admin)
+    employees = Employee.query.filter(
+        Employee.role != 'admin',
+        Employee.email != 'caohoangviet738@gmail.com'
+    ).all()
+
+    data = []
+    for emp in employees:
+        # Lấy tất cả các ca làm việc của nhân viên này trong tháng hiện tại
+        shifts = Schedule.query.filter(
+            Schedule.employee_id == emp.id,
+            Schedule.date >= start_date,
+            Schedule.date <= end_date
+        ).all()
+        
+        total_shifts = len(shifts)
+        total_salary = total_shifts * SHIFT_RATE
+        
+        # 3. Đưa dữ liệu vào danh sách
+        data.append({
+            'Mã NV': emp.code,
+            'Họ và Tên': emp.fullname,
+            'Phòng ban': emp.department,
+            'Chức vụ': emp.position,
+            f'Tổng số ca (Tháng {current_month})': total_shifts,
+            'Đơn giá / Ca (VNĐ)': f"{SHIFT_RATE:,}",
+            'Tổng Lương (VNĐ)': f"{total_salary:,}"
+        })
+
+    # 4. Tạo file Excel
+    df = pd.DataFrame(data)
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name=f'Luong_T{current_month}_{current_year}')
+        
+        # Căn chỉnh độ rộng cột
+        worksheet = writer.sheets[f'Luong_T{current_month}_{current_year}']
+        for idx, col in enumerate(df.columns):
+            max_len = max(df[col].astype(str).map(len).max(), len(col)) + 4
+            worksheet.column_dimensions[chr(65 + idx)].width = max_len
+
+    output.seek(0)
+    filename = f"Bang_Luong_Nhan_Vien_Thang_{current_month}_{current_year}.xlsx"
+    
+    return send_file(output, download_name=filename, as_attachment=True)
