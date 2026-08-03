@@ -20,8 +20,23 @@ def add():
         task_name = request.form.get('task_name')
         priority = request.form.get('priority')
         duration = request.form.get('duration')
+        
+        # Bắt giá trị mức lương từ giao diện
+        wage = request.form.get('wage')
+        
+        # Xử lý mức lương (Mặc định 150000 nếu để trống hoặc nhập sai)
+        try:
+            wage_val = int(wage) if wage else 150000
+        except ValueError:
+            wage_val = 150000
 
-        new_task = Task(code=code, task_name=task_name, priority=int(priority), duration=int(duration))
+        new_task = Task(
+            code=code, 
+            task_name=task_name, 
+            priority=int(priority), 
+            duration=int(duration),
+            wage=wage_val  # Lưu mức lương vào DB
+        )
         try:
             db.session.add(new_task)
             db.session.commit()
@@ -40,6 +55,14 @@ def edit(id):
         t.task_name = request.form.get('task_name')
         t.priority = int(request.form.get('priority'))
         t.duration = int(request.form.get('duration'))
+        
+        # Cập nhật mức lương
+        wage = request.form.get('wage')
+        try:
+            t.wage = int(wage) if wage else 150000
+        except ValueError:
+            t.wage = 150000
+
         try:
             db.session.commit()
             return redirect(url_for('task.index'))
