@@ -18,24 +18,21 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# --- DECORATOR KIỂM TRA QUYỀN ADMIN ---
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get('role') != 'admin':
-            flash('Chỉ Quản trị viên (Admin) mới có quyền thực hiện thao tác này!', 'danger')
+            flash('Chỉ Quản trị viên mới có quyền thực hiện thao tác này!', 'danger')
             return redirect(url_for('employee.index'))
         return f(*args, **kwargs)
     return decorated_function
 
-# --- 1. DANH SÁCH NHÂN VIÊN (AI CŨNG XEM ĐƯỢC) ---
 @employee_bp.route('/')
 @login_required
 def index():
     employees = Employee.query.order_by(Employee.id.desc()).all()
     return render_template('employee/index.html', employees=employees)
 
-# --- TRANG XEM DANH SÁCH CHỜ DUYỆT (CHỈ ADMIN) ---
 @employee_bp.route('/pending-users')
 @login_required
 @admin_required
@@ -43,7 +40,6 @@ def pending_users():
     pending_list = Employee.query.filter_by(is_approved=False).all()
     return render_template('employee/pending.html', pending_list=pending_list)
 
-# --- DUYỆT TÀI KHOẢN (CHỈ ADMIN) ---
 @employee_bp.route('/approve/<int:id>')
 @login_required
 @admin_required
@@ -51,10 +47,9 @@ def approve_user(id):
     emp = Employee.query.get_or_404(id)
     emp.is_approved = True
     db.session.commit()
-    flash(f'Đã phê duyệt tài khoản cho nhân viên: {emp.fullname}', 'success')
+    flash(f'Đã phê duyệt tài khoản cho: {emp.fullname}', 'success')
     return redirect(url_for('employee.pending_users'))
 
-# --- TỪ CHỐI / XÓA TÀI KHOẢN CHỜ DUYỆT (CHỈ ADMIN) ---
 @employee_bp.route('/reject/<int:id>')
 @login_required
 @admin_required
@@ -62,10 +57,9 @@ def reject_user(id):
     emp = Employee.query.get_or_404(id)
     db.session.delete(emp)
     db.session.commit()
-    flash(f'Đã từ chối và xóa yêu cầu đăng ký của: {emp.fullname}', 'danger')
+    flash(f'Đã xóa yêu cầu của: {emp.fullname}', 'danger')
     return redirect(url_for('employee.pending_users'))
 
-# --- 2. THÊM NHÂN VIÊN MỚI (CHỈ ADMIN) ---
 @employee_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -78,98 +72,45 @@ def add():
         department = request.form.get('department')
         position = request.form.get('position')
 
-        avatar_filename = None
-        if 'avatar' in request.files:
-            file = request.files['avatar']
-            if file and file.filename != '' and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
-                avatar_filename = timestamp + filename
-
-                upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
-                os.makedirs(upload_dir, exist_ok=True)
-                file.save(os.path.join(upload_dir, avatar_filename))
-
-        existing_emp = Employee.query.filter(
-            (Employee.code == code) | (Employee.email == email)
-        ).first()
-
+        existing_emp = Employee.query.filter((Employee.code == code) | (Employee.email == email)).first()
         if existing_emp:
             flash('Mã nhân viên hoặc Email đã tồn tại!', 'danger')
             return redirect(url_for('employee.add'))
 
         new_emp = Employee(
-            code=code,
-            fullname=fullname,
-            email=email,
-            phone=phone,
-            department=department,
-            position=position,
-            avatar=avatar_filename,
-            role='employee',
-            is_approved=True  # Tài khoản do Admin trực tiếp thêm sẽ được duyệt sẵn
+            code=code, fullname=fullname, email=email, phone=phone,
+            department=department, position=position, role='employee', is_approved=True
         )
         new_emp.set_password('123456')
-
         db.session.add(new_emp)
         db.session.commit()
         return redirect(url_for('employee.index'))
-
     return render_template('employee/add.html')
 
-# --- 3. CHỈNH SỬA NHÂN VIÊN (CHỈ ADMIN) ---
 @employee_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit(id):
     emp = Employee.query.get_or_404(id)
-
     if request.method == 'POST':
-        fullname = request.form.get('fullname')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
-        department = request.form.get('department')
-        position = request.form.get('position')
-        role = request.form.get('role', 'employee')
+        emp.fullname = request.form.get('fullname')
+        emp.email = request.form.get('email')
+        emp.phone = request.form.get('phone')
+        emp.department = request.form.get('department')
+        emp.position = request.form.get('position')
+        emp.role = request.form.get('role', 'employee')
+        
         new_password = request.form.get('password')
-
-        existing_email = Employee.query.filter(Employee.email == email, Employee.id != id).first()
-        if existing_email:
-            return render_template('employee/edit.html', emp=emp, error="Email này đã được sử dụng bởi nhân viên khác!")
-
-        emp.fullname = fullname
-        emp.email = email
-        emp.phone = phone
-        emp.department = department
-        emp.position = position
-        emp.role = role
-
         if new_password and new_password.strip():
             emp.set_password(new_password.strip())
-
-        if 'avatar' in request.files:
-            file = request.files['avatar']
-            if file and file.filename != '' and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
-                avatar_filename = timestamp + filename
-
-                upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
-                os.makedirs(upload_dir, exist_ok=True)
-                file.save(os.path.join(upload_dir, avatar_filename))
-
-                emp.avatar = avatar_filename
-
+            
         try:
             db.session.commit()
             return redirect(url_for('employee.index'))
         except Exception as e:
             db.session.rollback()
-            return render_template('employee/edit.html', emp=emp, error=f"Lỗi lưu CSDL: {e}")
-
     return render_template('employee/edit.html', emp=emp)
 
-# --- 4. XÓA NHÂN VIÊN (CHỈ ADMIN) ---
 @employee_bp.route('/delete/<int:id>')
 @login_required
 @admin_required
@@ -179,49 +120,27 @@ def delete(id):
     db.session.commit()
     return redirect(url_for('employee.index'))
 
-# --- 5. XEM BẢNG LƯƠNG TRỰC TIẾP TRÊN WEB (CHỈ ADMIN) ---
 @employee_bp.route('/salary')
 @login_required
 @admin_required
 def salary_view():
     today = date.today()
-    current_month = today.month
-    current_year = today.year
-    
+    current_month, current_year = today.month, today.year
     _, last_day = calendar.monthrange(current_year, current_month)
-    start_date = date(current_year, current_month, 1)
-    end_date = date(current_year, current_month, last_day)
+    start_date, end_date = date(current_year, current_month, 1), date(current_year, current_month, last_day)
 
-    employees = Employee.query.filter(
-        Employee.role != 'admin',
-        Employee.email != 'caohoangviet738@gmail.com'
-    ).all()
-
+    employees = Employee.query.filter(Employee.role != 'admin', Employee.email != 'caohoangviet738@gmail.com').all()
     data = []
     OVERTIME_MULTIPLIER = 1.5
 
     for emp in employees:
-        shifts = Schedule.query.filter(
-            Schedule.employee_id == emp.id,
-            Schedule.date >= start_date,
-            Schedule.date <= end_date
-        ).all()
-        
-        total_salary = 0
-        normal_count = 0
-        overtime_count = 0
+        shifts = Schedule.query.filter(Schedule.employee_id == emp.id, Schedule.date >= start_date, Schedule.date <= end_date).all()
+        total_salary, normal_count, overtime_count = 0, 0, 0
         
         for s in shifts:
-            try:
-                base_wage = int(s.task.wage) if s.task and s.task.wage else 150000
-            except:
-                base_wage = 150000
-
-            # TỰ ĐỘNG TÍNH LÀ TĂNG CA NẾU LÀ CA TỐI HOẶC CUỐI TUẦN
-            is_weekend = s.date.weekday() >= 5
-            is_night = (s.shift == 'Tối')
-            is_ot = getattr(s, 'is_overtime', False) or is_weekend or is_night
-
+            base_wage = int(s.task.wage) if s.task and s.task.wage else 150000
+            is_ot = getattr(s, 'is_overtime', False) or (s.date.weekday() >= 5) or (s.shift == 'Tối')
+            
             if is_ot:
                 total_salary += base_wage * OVERTIME_MULTIPLIER
                 overtime_count += 1
@@ -231,62 +150,33 @@ def salary_view():
 
         if normal_count > 0 or overtime_count > 0:
             data.append({
-                'code': emp.code,
-                'fullname': emp.fullname,
-                'department': emp.department,
-                'normal_count': normal_count,
-                'overtime_count': overtime_count,
-                'total_salary': int(total_salary)
+                'code': emp.code, 'fullname': emp.fullname, 'department': emp.department,
+                'normal_count': normal_count, 'overtime_count': overtime_count, 'total_salary': int(total_salary)
             })
 
-    return render_template('employee/salary.html', 
-                           salary_data=data, 
-                           month=current_month, 
-                           year=current_year)
+    return render_template('employee/salary.html', salary_data=data, month=current_month, year=current_year)
 
-# --- 6. XUẤT EXCEL BẢNG LƯƠNG TỪ TRANG WEB ---
 @employee_bp.route('/salary/export')
 @login_required
 @admin_required
 def export_salary():
     today = date.today()
-    current_month = today.month
-    current_year = today.year
-    
+    current_month, current_year = today.month, today.year
     _, last_day = calendar.monthrange(current_year, current_month)
-    start_date = date(current_year, current_month, 1)
-    end_date = date(current_year, current_month, last_day)
+    start_date, end_date = date(current_year, current_month, 1), date(current_year, current_month, last_day)
 
-    employees = Employee.query.filter(
-        Employee.role != 'admin',
-        Employee.email != 'caohoangviet738@gmail.com'
-    ).all()
-
+    employees = Employee.query.filter(Employee.role != 'admin', Employee.email != 'caohoangviet738@gmail.com').all()
     data = []
     OVERTIME_MULTIPLIER = 1.5
 
     for emp in employees:
-        shifts = Schedule.query.filter(
-            Schedule.employee_id == emp.id,
-            Schedule.date >= start_date,
-            Schedule.date <= end_date
-        ).all()
-        
-        total_salary = 0
-        normal_count = 0
-        overtime_count = 0
+        shifts = Schedule.query.filter(Schedule.employee_id == emp.id, Schedule.date >= start_date, Schedule.date <= end_date).all()
+        total_salary, normal_count, overtime_count = 0, 0, 0
         
         for s in shifts:
-            try:
-                base_wage = int(s.task.wage) if s.task and s.task.wage else 150000
-            except:
-                base_wage = 150000
-
-            # TỰ ĐỘNG TÍNH LÀ TĂNG CA NẾU LÀ CA TỐI HOẶC CUỐI TUẦN
-            is_weekend = s.date.weekday() >= 5
-            is_night = (s.shift == 'Tối')
-            is_ot = getattr(s, 'is_overtime', False) or is_weekend or is_night
-
+            base_wage = int(s.task.wage) if s.task and s.task.wage else 150000
+            is_ot = getattr(s, 'is_overtime', False) or (s.date.weekday() >= 5) or (s.shift == 'Tối')
+            
             if is_ot:
                 total_salary += base_wage * OVERTIME_MULTIPLIER
                 overtime_count += 1
@@ -296,12 +186,8 @@ def export_salary():
 
         if normal_count > 0 or overtime_count > 0:
             data.append({
-                'Mã NV': emp.code,
-                'Họ và Tên': emp.fullname,
-                'Phòng ban': emp.department,
-                'Số Ca Thường': normal_count,
-                'Số Ca Tăng Ca (x1.5)': overtime_count,
-                'Tổng Lương (VNĐ)': f"{int(total_salary):,}"
+                'Mã NV': emp.code, 'Họ và Tên': emp.fullname, 'Phòng ban': emp.department,
+                'Số Ca Thường': normal_count, 'Số Ca Tăng Ca (x1.5)': overtime_count, 'Tổng Lương (VNĐ)': f"{int(total_salary):,}"
             })
 
     if not data:
@@ -312,11 +198,5 @@ def export_salary():
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name=f'Luong_T{current_month}_{current_year}')
-        worksheet = writer.sheets[f'Luong_T{current_month}_{current_year}']
-        for idx, col in enumerate(df.columns):
-            max_len = max(df[col].astype(str).map(len).max(), len(col)) + 4
-            worksheet.column_dimensions[chr(65 + idx)].width = max_len
-
     output.seek(0)
-    filename = f"Bang_Luong_Thang_{current_month}_{current_year}.xlsx"
-    return send_file(output, download_name=filename, as_attachment=True)
+    return send_file(output, download_name=f"Bang_Luong_Thang_{current_month}_{current_year}.xlsx", as_attachment=True)
