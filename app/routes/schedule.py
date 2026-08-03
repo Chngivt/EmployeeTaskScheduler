@@ -1,9 +1,7 @@
-import json
-import random
-import re
+import random, re
 import pandas as pd
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from app import db
 from app.models.schedule import Schedule
 from app.models.employee import Employee
@@ -13,38 +11,19 @@ from app.routes.auth import login_required
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
 def get_non_admin_employees():
-    return Employee.query.filter(
-        Employee.role != 'admin',
-        Employee.email != 'caohoangviet738@gmail.com',
-        Employee.department != 'Quản trị'
-    ).all()
+    return Employee.query.filter(Employee.role != 'admin', Employee.email != 'caohoangviet738@gmail.com', Employee.department != 'Quản trị').all()
 
-def cleanup_admin_schedules():
-    admin_employees = Employee.query.filter(
-        (Employee.role == 'admin') | 
-        (Employee.email == 'caohoangviet738@gmail.com') | 
-        (Employee.department == 'Quản trị')
-    ).all()
-    admin_ids = [emp.id for emp in admin_employees]
-    if admin_ids:
-        Schedule.query.filter(Schedule.employee_id.in_(admin_ids)).delete(synchronize_session=False)
-        db.session.commit()
-
-# --- 1. TRANG DANH SÁCH PHÂN CÔNG ---
 @schedule_bp.route('/')
 @login_required
 def index():
-    cleanup_admin_schedules()
     schedules = Schedule.query.order_by(Schedule.date.desc()).all()
     employees = get_non_admin_employees()
     tasks = Task.query.all()
     return render_template('schedule/index.html', schedules=schedules, employees=employees, tasks=tasks)
 
-# --- 2. TRANG BẢNG LỊCH TUẦN ---
 @schedule_bp.route('/weekly')
 @login_required
 def weekly():
-    cleanup_admin_schedules()
     today = datetime.now().date()
     start_of_week = today - timedelta(days=today.weekday())
     week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
@@ -53,80 +32,34 @@ def weekly():
     schedules = Schedule.query.all()
     tasks = Task.query.all()
     
-    # Lưu toàn bộ object Schedule vào dictionary để template có thể gọi và hiển thị nút xóa trực tiếp
-    schedule_objs = {}
-    for s in schedules:
-        if s.date:
-            date_key = s.date.strftime('%Y-%m-%d') if hasattr(s.date, 'strftime') else str(s.date)
-            schedule_objs[(s.employee_id, date_key, s.shift)] = s
+    schedule_objs = {(s.employee_id, s.date.strftime('%Y-%m-%d') if hasattr(s.date, 'strftime') else str(s.date), s.shift): s for s in schedules if s.date}
             
-    return render_template('schedule/weekly.html', 
-                           employees=employees,
-                           week_dates=week_dates,
-                           schedule_objs=schedule_objs,
-                           tasks=tasks)
+    return render_template('schedule/weekly.html', employees=employees, week_dates=week_dates, schedule_objs=schedule_objs, tasks=tasks)
 
-# --- 3. XỬ LÝ THÊM/ĐĂNG KÝ PHÂN CÔNG ---
 @schedule_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
     if request.method == 'POST':
-        employee_id = request.form.get('employee_id')
-        task_id = request.form.get('task_id')
-        date_str = request.form.get('date')
-        shift = request.form.get('shift')
-
-        if not employee_id or not task_id or not date_str or not shift:
-            return redirect(request.referrer or url_for('schedule.weekly'))
+        employee_id, task_id, date_str, shift = request.form.get('employee_id'), request.form.get('task_id'), request.form.get('date'), request.form.get('shift')
+        if not all([employee_id, task_id, date_str, shift]): return redirect(request.referrer or url_for('schedule.weekly'))
 
         try:
-            emp = Employee.query.get(int(employee_id))
-            if not emp or emp.role == 'admin' or emp.email == 'caohoangviet738@gmail.com' or emp.department == 'Quản trị':
-                flash("Quản trị viên (Admin) không tham gia ca làm việc trực tiếp!", "danger")
-                return redirect(url_for('schedule.weekly'))
-
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-
-            # --- TỰ ĐỘNG XÁC ĐỊNH TĂNG CA NẾU LÀ CA TỐI HOẶC THỨ 7, CHỦ NHẬT ---
-            is_weekend = date_obj.weekday() >= 5  # 5 là Thứ 7, 6 là Chủ Nhật
-            is_night = (shift == 'Tối')
-            form_ot = True if request.form.get('is_overtime') == '1' else False
+            is_overtime = True if request.form.get('is_overtime') == '1' else (date_obj.weekday() >= 5 or shift == 'Tối')
             
-            # Nếu form tick Tăng ca, HOẶC là cuối tuần, HOẶC là ca tối -> Tính là tăng ca
-            is_overtime = form_ot or is_weekend or is_night
-            # -------------------------------------------------------------------
-
-            conflict = Schedule.query.filter_by(
-                employee_id=int(employee_id), 
-                date=date_obj, 
-                shift=shift
-            ).first()
-            
+            conflict = Schedule.query.filter_by(employee_id=int(employee_id), date=date_obj, shift=shift).first()
             if conflict:
                 conflict.task_id = int(task_id)
-                conflict.is_overtime = is_overtime  # Cập nhật cờ tăng ca
+                conflict.is_overtime = is_overtime
             else:
-                new_schedule = Schedule(
-                    employee_id=int(employee_id), 
-                    task_id=int(task_id), 
-                    date=date_obj, 
-                    shift=shift,
-                    is_overtime=is_overtime  # Lưu cờ tăng ca
-                )
-                db.session.add(new_schedule)
-
+                db.session.add(Schedule(employee_id=int(employee_id), task_id=int(task_id), date=date_obj, shift=shift, is_overtime=is_overtime))
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            print(f"Lỗi khi thêm/cập nhật phân công: {e}")
 
         return redirect(request.referrer or url_for('schedule.weekly'))
+    return render_template('schedule/add.html', employees=get_non_admin_employees(), tasks=Task.query.all())
 
-    employees = get_non_admin_employees()
-    tasks = Task.query.all()
-    return render_template('schedule/add.html', employees=employees, tasks=tasks)
-
-# --- 4. XÓA PHÂN CÔNG THEO ID ---
 @schedule_bp.route('/delete/<int:id>')
 @login_required
 def delete(id):
@@ -135,182 +68,86 @@ def delete(id):
     db.session.commit()
     return redirect(request.referrer or url_for('schedule.weekly'))
 
-# --- 5. XÓA CA TRỰC TIẾP TRÊN BẢNG LỊCH TUẦN ---
 @schedule_bp.route('/delete_info', methods=['GET'])
 @login_required
 def delete_by_info():
-    employee_id = request.args.get('employee_id')
-    date_str = request.args.get('date')
-    shift = request.args.get('shift')
-    
+    employee_id, date_str, shift = request.args.get('employee_id'), request.args.get('date'), request.args.get('shift')
     if employee_id and date_str and shift:
         try:
-            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-            schedule_item = Schedule.query.filter_by(
-                employee_id=int(employee_id),
-                date=date_obj,
-                shift=shift
-            ).first()
-            
+            schedule_item = Schedule.query.filter_by(employee_id=int(employee_id), date=datetime.strptime(date_str, '%Y-%m-%d').date(), shift=shift).first()
             if schedule_item:
                 db.session.delete(schedule_item)
                 db.session.commit()
-                flash("Đã hủy ca làm việc thành công!", "success")
         except Exception as e:
             db.session.rollback()
-            flash(f"Lỗi khi hủy ca: {e}", "danger")
-            
     return redirect(url_for('schedule.weekly'))
 
-# --- 6. PHÂN CÔNG TỰ ĐỘNG (BỎ QUA T7, CN VÀ CA TỐI) ---
 @schedule_bp.route('/auto_assign', methods=['POST'])
 @login_required
 def auto_assign():
     today = datetime.now().date()
-    start_of_week = today - timedelta(days=today.weekday())
-    week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
+    week_dates = [(today - timedelta(days=today.weekday())) + timedelta(days=i) for i in range(7)]
+    employees, tasks = get_non_admin_employees(), Task.query.all()
     
-    employees = get_non_admin_employees()
-    tasks = Task.query.all()
-    
-    if not employees or not tasks:
-        flash("Lỗi: Cần có ít nhất 1 nhân viên và 1 công việc trong hệ thống để thực hiện phân công tự động!", "danger")
-        return redirect(url_for('schedule.weekly'))
-        
-    shifts = ['Sáng', 'Chiều', 'Tối'] 
-    assigned_count = 0
+    if not employees or not tasks: return redirect(url_for('schedule.weekly'))
     
     for d in week_dates:
-        # Bỏ qua Thứ 7 và Chủ Nhật không tự động phân công
-        if d.weekday() >= 5:
-            continue
-            
+        if d.weekday() >= 5: continue
         for emp in employees:
-            for shift in shifts:
-                # Bỏ qua Ca Tối không tự động phân công
-                if shift == 'Tối':
-                    continue
-                    
-                existing_schedule = Schedule.query.filter_by(employee_id=emp.id, date=d, shift=shift).first()
-                if not existing_schedule:
-                    random_task = random.choice(tasks)
-                    new_schedule = Schedule(
-                        employee_id=emp.id,
-                        task_id=random_task.id,
-                        date=d,
-                        shift=shift,
-                        is_overtime=False # Ca Sáng/Chiều ngày thường auto không phải tăng ca
-                    )
-                    db.session.add(new_schedule)
-                    assigned_count += 1
-                    
+            for shift in ['Sáng', 'Chiều']:
+                if not Schedule.query.filter_by(employee_id=emp.id, date=d, shift=shift).first():
+                    db.session.add(Schedule(employee_id=emp.id, task_id=random.choice(tasks).id, date=d, shift=shift, is_overtime=False))
     try:
         db.session.commit()
-        if assigned_count > 0:
-            flash(f"Thành công: Đã tự động điền {assigned_count} ca làm việc (chỉ áp dụng Ca Sáng/Chiều từ Thứ 2 đến Thứ 6)!", "success")
-        else:
-            flash("Các ca Sáng/Chiều từ Thứ 2 - Thứ 6 đã kín lịch, không có ca trống nào cần điền thêm.", "info")
     except Exception as e:
         db.session.rollback()
-        flash(f"Đã xảy ra lỗi khi phân công tự động: {e}", "danger")
-        
     return redirect(url_for('schedule.weekly'))
 
-# --- 7. XÓA TẤT CẢ LỊCH (KHÔNG RANDOM) ---
 @schedule_bp.route('/reset', methods=['POST'])
 @login_required
 def reset_schedule():
     try:
         Schedule.query.delete()
         db.session.commit()
-        flash("Đã xóa toàn bộ lịch phân công thành công!", "success")
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        flash(f"Lỗi khi xóa lịch: {e}", "danger")
-        
     return redirect(url_for('schedule.weekly'))
 
-# --- 8. NẠP EXCEL TỰ ĐỘNG PHÂN CÔNG ---
 @schedule_bp.route('/import_excel', methods=['POST'])
 @login_required
 def import_excel():
-    if 'excel_file' not in request.files:
-        flash("Không tìm thấy file tải lên!", "danger")
-        return redirect(url_for('schedule.weekly'))
-        
-    file = request.files['excel_file']
-    if file.filename == '':
-        flash("Bạn chưa chọn file Excel nào!", "danger")
-        return redirect(url_for('schedule.weekly'))
-        
+    file = request.files.get('excel_file')
     if file and file.filename.endswith(('.xlsx', '.xls')):
         try:
             df = pd.read_excel(file, sheet_name=0, skiprows=1)
-            if len(df.columns) < 4:
-                flash("Cấu trúc file Excel không hợp lệ! Cần có các cột: Thứ, Buổi, Công việc phân công, Người thực hiện.", "danger")
-                return redirect(url_for('schedule.weekly'))
-                
             df.columns = ['Thứ', 'Buổi', 'Công việc', 'Nhân viên']
             df['Thứ'] = df['Thứ'].ffill()
             df['Buổi'] = df['Buổi'].ffill()
             
-            imported_count = 0
             for _, row in df.iterrows():
-                thu_str = str(row['Thứ'])
-                buoi_str = str(row['Buổi']).strip()
-                task_name_str = str(row['Công việc']).strip()
-                emp_name_str = str(row['Nhân viên']).strip()
+                match = re.search(r'(\d{2}/\d{2})', str(row['Thứ']))
+                if not match: continue
+                date_obj = datetime.strptime(f"{match.group(1)}/{datetime.now().year}", '%d/%m/%Y').date()
                 
-                match = re.search(r'(\d{2}/\d{2})', thu_str)
-                if not match:
-                    continue
-                
-                current_year = datetime.now().year
-                date_obj = datetime.strptime(f"{match.group(1)}/{current_year}", '%d/%m/%Y').date()
-                
-                emp = Employee.query.filter(db.func.trim(Employee.fullname) == emp_name_str).first()
-                if not emp or emp.role == 'admin' or emp.email == 'caohoangviet738@gmail.com' or emp.department == 'Quản trị':
-                    continue
+                emp = Employee.query.filter(db.func.trim(Employee.fullname) == str(row['Nhân viên']).strip()).first()
+                if not emp or emp.role == 'admin': continue
                     
+                task_name_str = str(row['Công việc']).strip()
                 task = Task.query.filter(db.func.trim(Task.task_name) == task_name_str).first()
-                
                 if not task:
-                    task = Task(task_name=task_name_str, wage=150000)
+                    task = Task(task_name=task_name_str, code=task_name_str[:5], priority=2, duration=240, wage=150000)
                     db.session.add(task)
                     db.session.commit()
                     
-                # --- TỰ ĐỘNG XÁC ĐỊNH TĂNG CA KHI NẠP TỪ FILE EXCEL ---
-                is_weekend = date_obj.weekday() >= 5
-                is_night = (buoi_str == 'Tối')
-                is_ot = is_weekend or is_night
+                is_ot = (date_obj.weekday() >= 5) or (str(row['Buổi']).strip() == 'Tối')
                 
-                existing_schedule = Schedule.query.filter_by(
-                    employee_id=emp.id,
-                    date=date_obj,
-                    shift=buoi_str
-                ).first()
-                
+                existing_schedule = Schedule.query.filter_by(employee_id=emp.id, date=date_obj, shift=str(row['Buổi']).strip()).first()
                 if existing_schedule:
-                    existing_schedule.task_id = task.id
-                    existing_schedule.is_overtime = is_ot
+                    existing_schedule.task_id, existing_schedule.is_overtime = task.id, is_ot
                 else:
-                    new_sched = Schedule(
-                        employee_id=emp.id,
-                        task_id=task.id,
-                        date=date_obj,
-                        shift=buoi_str,
-                        is_overtime=is_ot
-                    )
-                    db.session.add(new_sched)
-                
-                imported_count += 1
+                    db.session.add(Schedule(employee_id=emp.id, task_id=task.id, date=date_obj, shift=str(row['Buổi']).strip(), is_overtime=is_ot))
                 
             db.session.commit()
-            flash(f"Nạp file Excel thành công! Đã cập nhật {imported_count} phân công ca làm việc.", "success")
         except Exception as e:
             db.session.rollback()
-            flash(f"Lỗi khi xử lý file Excel: {e}", "danger")
-    else:
-        flash("Chỉ hỗ trợ định dạng file Excel (.xlsx, .xls)!", "warning")
-        
     return redirect(url_for('schedule.weekly'))
