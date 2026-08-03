@@ -7,11 +7,16 @@
         <small class="text-muted">Quản lý hồ sơ, phòng ban và tài khoản nhân sự</small>
     </div>
     
-    <!-- 1. BỔ SUNG: CHỈ ADMIN MỚI THẤY NÚT THÊM MỚI -->
+    <!-- 1. CHỈ ADMIN MỚI THẤY NÚT DUYỆT TÀI KHOẢN VÀ THÊM MỚI -->
     {% if session.get('role') == 'admin' %}
-    <a href="/employee/add" class="btn btn-primary shadow-sm rounded-pill px-3">
-        <i class="bi bi-person-plus-fill me-1"></i> Thêm Nhân Viên Mới
-    </a>
+    <div class="d-flex align-items-center gap-2">
+        <a href="/employee/pending-users" class="btn btn-warning shadow-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-person-lines-fill me-1"></i> Duyệt Tài Khoản
+        </a>
+        <a href="/employee/add" class="btn btn-primary shadow-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-person-plus-fill me-1"></i> Thêm Nhân Viên Mới
+        </a>
+    </div>
     {% endif %}
 </div>
 
@@ -27,7 +32,7 @@
                         <th class="py-3">Phòng ban</th>
                         <th class="py-3">Chức vụ</th>
                         
-                        <!-- 2. BỔ SUNG: CHỈ ADMIN MỚI THẤY TIÊU ĐỀ THAO TÁC -->
+                        <!-- 2. CHỈ ADMIN MỚI THẤY TIÊU ĐỀ THAO TÁC -->
                         {% if session.get('role') == 'admin' %}
                         <th class="py-3 text-end pe-4">Thao tác</th>
                         {% endif %}
@@ -62,7 +67,7 @@
                             <td><span class="badge bg-info bg-opacity-10 text-info fw-bold px-2 py-1">{{ emp.department }}</span></td>
                             <td class="fw-semibold text-dark">{{ emp.position }}</td>
                             
-                            <!-- 3. BỔ SUNG: CHỈ ADMIN MỚI THẤY NÚT SỬA & XÓA -->
+                            <!-- 3. CHỈ ADMIN MỚI THẤY NÚT SỬA & XÓA -->
                             {% if session.get('role') == 'admin' %}
                             <td class="text-end pe-4">
                                 <!-- NÚT CHỈNH SỬA THÔNG TIN -->
