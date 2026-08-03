@@ -2,13 +2,10 @@ from app import db
 
 class Task(db.Model):
     __tablename__ = 'task'
-    
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(20), unique=True, nullable=False)
     task_name = db.Column(db.String(200), nullable=False)
-    wage = db.Column(db.Integer, default=150000)
-    priority = db.Column(db.Integer, nullable=False) # Ví dụ: 1-Cao, 2-TB, 3-Thấp
-    duration = db.Column(db.Integer, nullable=False) # Thời lượng (giờ)
-    
-    # Mối quan hệ: Một công việc có thể xuất hiện trong nhiều lịch phân công
+    wage = db.Column(db.Integer, default=150000) # Đơn giá / Ca
+    priority = db.Column(db.Integer, nullable=False)
+    duration = db.Column(db.Integer, nullable=False)
     schedules = db.relationship('Schedule', backref='task', lazy=True)
