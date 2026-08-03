@@ -292,12 +292,23 @@
         document.getElementById('modal_shift').value = shift;
         document.getElementById('modal_emp_name_display').innerText = empName;
         
-        // Reset checkbox tăng ca mỗi khi mở bảng mới
-        document.getElementById('is_overtime').checked = false;
-        
         const dateParts = dateStr.split('-');
         document.getElementById('modal_date_display').innerText = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
         document.getElementById('modal_shift_display').innerText = 'Ca ' + shift;
+
+        // --- TỰ ĐỘNG BẬT TĂNG CA NẾU LÀ CA TỐI HOẶC CUỐI TUẦN ---
+        const d = new Date(dateStr);
+        const dayOfWeek = d.getDay(); // 6 là Thứ 7, 0 là Chủ Nhật
+        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+        const isNight = (shift === 'Tối');
+
+        const otCheckbox = document.getElementById('is_overtime');
+        if (isWeekend || isNight) {
+            otCheckbox.checked = true; // Tự động đánh dấu
+        } else {
+            otCheckbox.checked = false; // Bỏ đánh dấu nếu là ca thường
+        }
+        // --------------------------------------------------------
 
         var registerModal = bootstrap.Modal.getOrCreateInstance(modalEl);
         registerModal.show();
