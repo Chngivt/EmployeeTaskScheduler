@@ -15,6 +15,8 @@
                     <th>Tên Công Việc</th>
                     <th>Độ Ưu Tiên</th>
                     <th>Thời Lượng (Giờ)</th>
+                    <!-- THÊM CỘT TIÊU ĐỀ LƯƠNG -->
+                    <th>Mức lương / Ca</th>
                     <th>Hành Động</th>
                 </tr>
             </thead>
@@ -31,14 +33,25 @@
                         {% endif %}
                     </td>
                     <td>{{ t.duration }}</td>
+                    
+                    <!-- THÊM DỮ LIỆU CỘT LƯƠNG (Hiển thị màu xanh lá và format dấu phẩy) -->
+                    <td class="fw-bold text-success">
+                        {% if t.wage %}
+                            {{ "{:,.0f}".format(t.wage).replace(',', '.') }} VNĐ
+                        {% else %}
+                            150.000 VNĐ
+                        {% endif %}
+                    </td>
+                    
                     <td>
                         <a href="/task/edit/{{ t.id }}" class="btn btn-sm btn-primary">Sửa</a>
-                        <a href="/task/delete/{{ t.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa công việc này?');">Xóa</a>
+                        <a href="/task/delete/{{ t.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa công việc này? Các lịch làm việc liên quan cũng sẽ bị hủy bỏ!');">Xóa</a>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="text-center">Chưa có công việc nào trong hệ thống.</td>
+                    <!-- TĂNG COLSPAN LÊN 6 -->
+                    <td colspan="6" class="text-center">Chưa có công việc nào trong hệ thống.</td>
                 </tr>
                 {% endfor %}
             </tbody>
