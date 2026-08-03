@@ -3,7 +3,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 class Employee(db.Model):
     __tablename__ = 'employee'
-   
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(20), unique=True, nullable=False)
     fullname = db.Column(db.String(100), nullable=False)
@@ -11,21 +10,15 @@ class Employee(db.Model):
     phone = db.Column(db.String(20), nullable=False)
     department = db.Column(db.String(50), nullable=False)
     position = db.Column(db.String(50), nullable=False)
-   
-    # Trường lưu tên file ảnh đại diện mới
-    avatar = db.Column(db.String(255), nullable=True, default=None)
-   
-    # Trường mật khẩu và phân quyền
-    password_hash = db.Column(db.String(255), nullable=False, default='pbkdf2:sha256:600000$defaultpassword')
-    role = db.Column(db.String(20), default='employee') # 'admin' hoặc 'employee'
     
-    # Thêm trường trạng thái duyệt tài khoản (True: đã duyệt/mặc định, False: chờ admin duyệt)
-    is_approved = db.Column(db.Boolean, default=True, nullable=False)
-
+    avatar = db.Column(db.String(200), nullable=True) # Hỗ trợ ảnh đại diện
+    is_approved = db.Column(db.Boolean, default=False) # Trạng thái duyệt tài khoản
+    
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), default='employee')
     schedules = db.relationship('Schedule', backref='employee', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
