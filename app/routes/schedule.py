@@ -151,7 +151,7 @@ def delete_by_info():
             
     return redirect(url_for('schedule.weekly'))
 
-# --- 6. PHÂN CÔNG TỰ ĐỘNG ---
+# --- 6. PHÂN CÔNG TỰ ĐỘNG (BỎ QUA T7, CN VÀ CA TỐI) ---
 @schedule_bp.route('/auto_assign', methods=['POST'])
 @login_required
 def auto_assign():
@@ -170,8 +170,17 @@ def auto_assign():
     assigned_count = 0
     
     for d in week_dates:
+        # Trong Python, weekday() trả về: 0=Thứ 2, ..., 5=Thứ 7, 6=Chủ Nhật.
+        # Bỏ qua Thứ 7 và Chủ Nhật không tự động phân công
+        if d.weekday() >= 5:
+            continue
+            
         for emp in employees:
             for shift in shifts:
+                # Bỏ qua Ca Tối không tự động phân công
+                if shift == 'Tối':
+                    continue
+                    
                 existing_schedule = Schedule.query.filter_by(employee_id=emp.id, date=d, shift=shift).first()
                 if not existing_schedule:
                     random_task = random.choice(tasks)
@@ -187,9 +196,9 @@ def auto_assign():
     try:
         db.session.commit()
         if assigned_count > 0:
-            flash(f"Thành công: Đã tự động điền {assigned_count} ca làm việc trống cho nhân viên trong tuần này!", "success")
+            flash(f"Thành công: Đã tự động điền {assigned_count} ca làm việc (chỉ áp dụng Ca Sáng/Chiều từ Thứ 2 đến Thứ 6)!", "success")
         else:
-            flash("Tuần này nhân viên đã được phân công kín lịch, không có ca trống nào cần điền thêm.", "info")
+            flash("Các ca Sáng/Chiều từ Thứ 2 - Thứ 6 đã kín lịch, không có ca trống nào cần điền thêm.", "info")
     except Exception as e:
         db.session.rollback()
         flash(f"Đã xảy ra lỗi khi phân công tự động: {e}", "danger")
