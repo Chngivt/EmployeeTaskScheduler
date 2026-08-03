@@ -75,9 +75,6 @@ def add():
         task_id = request.form.get('task_id')
         date_str = request.form.get('date')
         shift = request.form.get('shift')
-        
-        # Bắt trạng thái checkbox Tăng ca
-        is_overtime = True if request.form.get('is_overtime') == '1' else False
 
         if not employee_id or not task_id or not date_str or not shift:
             return redirect(request.referrer or url_for('schedule.weekly'))
@@ -90,6 +87,15 @@ def add():
 
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
 
+            # --- TỰ ĐỘNG XÁC ĐỊNH TĂNG CA NẾU LÀ CA TỐI HOẶC THỨ 7, CHỦ NHẬT ---
+            is_weekend = date_obj.weekday() >= 5  # 5 là Thứ 7, 6 là Chủ Nhật
+            is_night = (shift == 'Tối')
+            form_ot = True if request.form.get('is_overtime') == '1' else False
+            
+            # Nếu form tick Tăng ca, HOẶC là cuối tuần, HOẶC là ca tối -> Tính là tăng ca
+            is_overtime = form_ot or is_weekend or is_night
+            # -------------------------------------------------------------------
+
             conflict = Schedule.query.filter_by(
                 employee_id=int(employee_id), 
                 date=date_obj, 
@@ -98,14 +104,14 @@ def add():
             
             if conflict:
                 conflict.task_id = int(task_id)
-                conflict.is_overtime = is_overtime  # <--- Lưu trạng thái tăng ca nếu đổi ca
+                conflict.is_overtime = is_overtime  # Cập nhật cờ tăng ca
             else:
                 new_schedule = Schedule(
                     employee_id=int(employee_id), 
                     task_id=int(task_id), 
                     date=date_obj, 
                     shift=shift,
-                    is_overtime=is_overtime  # <--- Lưu trạng thái tăng ca khi tạo ca mới
+                    is_overtime=is_overtime  # Lưu cờ tăng ca
                 )
                 db.session.add(new_schedule)
 
@@ -175,7 +181,6 @@ def auto_assign():
     assigned_count = 0
     
     for d in week_dates:
-        # Trong Python, weekday() trả về: 0=Thứ 2, ..., 5=Thứ 7, 6=Chủ Nhật.
         # Bỏ qua Thứ 7 và Chủ Nhật không tự động phân công
         if d.weekday() >= 5:
             continue
@@ -193,7 +198,8 @@ def auto_assign():
                         employee_id=emp.id,
                         task_id=random_task.id,
                         date=d,
-                        shift=shift
+                        shift=shift,
+                        is_overtime=False # Ca Sáng/Chiều ngày thường auto không phải tăng ca
                     )
                     db.session.add(new_schedule)
                     assigned_count += 1
@@ -269,10 +275,15 @@ def import_excel():
                 task = Task.query.filter(db.func.trim(Task.task_name) == task_name_str).first()
                 
                 if not task:
-                    task = Task(task_name=task_name_str)
+                    task = Task(task_name=task_name_str, wage=150000)
                     db.session.add(task)
                     db.session.commit()
                     
+                # --- TỰ ĐỘNG XÁC ĐỊNH TĂNG CA KHI NẠP TỪ FILE EXCEL ---
+                is_weekend = date_obj.weekday() >= 5
+                is_night = (buoi_str == 'Tối')
+                is_ot = is_weekend or is_night
+                
                 existing_schedule = Schedule.query.filter_by(
                     employee_id=emp.id,
                     date=date_obj,
@@ -281,12 +292,14 @@ def import_excel():
                 
                 if existing_schedule:
                     existing_schedule.task_id = task.id
+                    existing_schedule.is_overtime = is_ot
                 else:
                     new_sched = Schedule(
                         employee_id=emp.id,
                         task_id=task.id,
                         date=date_obj,
-                        shift=buoi_str
+                        shift=buoi_str,
+                        is_overtime=is_ot
                     )
                     db.session.add(new_sched)
                 
