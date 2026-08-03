@@ -75,6 +75,9 @@ def add():
         task_id = request.form.get('task_id')
         date_str = request.form.get('date')
         shift = request.form.get('shift')
+        
+        # Bắt trạng thái checkbox Tăng ca
+        is_overtime = True if request.form.get('is_overtime') == '1' else False
 
         if not employee_id or not task_id or not date_str or not shift:
             return redirect(request.referrer or url_for('schedule.weekly'))
@@ -95,12 +98,14 @@ def add():
             
             if conflict:
                 conflict.task_id = int(task_id)
+                conflict.is_overtime = is_overtime  # <--- Lưu trạng thái tăng ca nếu đổi ca
             else:
                 new_schedule = Schedule(
                     employee_id=int(employee_id), 
                     task_id=int(task_id), 
                     date=date_obj, 
-                    shift=shift
+                    shift=shift,
+                    is_overtime=is_overtime  # <--- Lưu trạng thái tăng ca khi tạo ca mới
                 )
                 db.session.add(new_schedule)
 
