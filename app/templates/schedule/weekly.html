@@ -41,8 +41,18 @@
         
         <!-- === KHU VỰC CÁC NÚT BẤM === -->
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <div class="badge bg-light text-dark border px-3 py-2 fw-normal rounded-pill">
-                {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
+            
+            <!-- THANH ĐIỀU HƯỚNG CHUYỂN TUẦN -->
+            <div class="d-flex align-items-center bg-white border rounded-pill shadow-sm overflow-hidden me-1">
+                <a href="{{ url_for('schedule.weekly', date=prev_week) }}" class="btn btn-sm btn-light border-end px-3 py-2" title="Tuần trước">
+                    <i class="bi bi-chevron-left text-primary fw-bold"></i>
+                </a>
+                <span class="px-3 py-1 fw-bold text-primary" style="font-size: 13px;">
+                    {{ week_dates[0].strftime('%d/%m/%Y') }} - {{ week_dates[-1].strftime('%d/%m/%Y') }}
+                </span>
+                <a href="{{ url_for('schedule.weekly', date=next_week) }}" class="btn btn-sm btn-light border-start px-3 py-2" title="Tuần sau">
+                    <i class="bi bi-chevron-right text-primary fw-bold"></i>
+                </a>
             </div>
             
             <!-- NÚT NẠP EXCEL -->
@@ -50,15 +60,17 @@
                 <i class="bi bi-file-earmark-arrow-up me-1"></i> Nạp Excel
             </button>
 
-            <!-- NÚT XÓA TẤT CẢ LỊCH -->
-            <form action="{{ url_for('schedule.reset_schedule') }}" method="POST" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA TẤT CẢ lịch phân công hiện tại không?');">
+            <!-- NÚT XÓA TẤT CẢ LỊCH (CHỈ XÓA TUẦN ĐANG XEM) -->
+            <form action="{{ url_for('schedule.reset_schedule') }}" method="POST" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA TOÀN BỘ lịch phân công của TUẦN NÀY không?');">
+                <input type="hidden" name="start_date" value="{{ week_dates[0].strftime('%Y-%m-%d') }}">
                 <button type="submit" class="btn btn-outline-danger btn-sm shadow-sm rounded-pill px-3 fw-semibold">
-                    <i class="bi bi-trash me-1"></i> Xóa tất cả
+                    <i class="bi bi-trash me-1"></i> Xóa tuần này
                 </button>
             </form>
 
-            <!-- NÚT PHÂN CÔNG TỰ ĐỘNG -->
-            <form action="/schedule/auto_assign" method="POST" class="m-0" onsubmit="return confirm('Hệ thống sẽ tự động điền ngẫu nhiên công việc vào các ca đang bị trống trong tuần này. Bạn có chắc chắn muốn thực hiện?');">
+            <!-- NÚT PHÂN CÔNG TỰ ĐỘNG (CHỈ ÁP DỤNG TUẦN ĐANG XEM) -->
+            <form action="/schedule/auto_assign" method="POST" class="m-0" onsubmit="return confirm('Hệ thống sẽ tự động điền ngẫu nhiên công việc vào các ca đang bị trống trong TUẦN NÀY. Bạn có chắc chắn muốn thực hiện?');">
+                <input type="hidden" name="start_date" value="{{ week_dates[0].strftime('%Y-%m-%d') }}">
                 <button type="submit" class="btn btn-primary btn-sm shadow-sm rounded-pill px-3">
                     <i class="bi bi-magic me-1"></i> Phân Công Tự Động
                 </button>
@@ -127,7 +139,6 @@
                                         <span class="badge bg-primary text-white fw-bold" style="font-size: 8px;">Sáng</span>
                                         <a href="{{ url_for('schedule.delete_by_info', employee_id=emp.id, date=date_key, shift='Sáng') }}" class="text-danger fw-bold text-decoration-none px-1" title="Hủy ca này" onclick="return confirm('Bạn có chắc chắn muốn hủy ca này không?');"><i class="bi bi-x-circle-fill" style="font-size: 11px;"></i></a>
                                     </div>
-                                    <!-- THÊM ICON TĂNG CA CHO CA SÁNG -->
                                     <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_sang.task.task_name }}">
                                         {{ sched_sang.task.task_name }} {% if sched_sang.is_overtime %}<i class="bi bi-fire text-danger ms-1" title="Tăng ca"></i>{% endif %}
                                     </div>
@@ -147,7 +158,6 @@
                                         <span class="badge bg-warning text-dark fw-bold" style="font-size: 8px;">Chiều</span>
                                         <a href="{{ url_for('schedule.delete_by_info', employee_id=emp.id, date=date_key, shift='Chiều') }}" class="text-danger fw-bold text-decoration-none px-1" title="Hủy ca này" onclick="return confirm('Bạn có chắc chắn muốn hủy ca này không?');"><i class="bi bi-x-circle-fill" style="font-size: 11px;"></i></a>
                                     </div>
-                                    <!-- THÊM ICON TĂNG CA CHO CA CHIỀU -->
                                     <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_chieu.task.task_name }}">
                                         {{ sched_chieu.task.task_name }} {% if sched_chieu.is_overtime %}<i class="bi bi-fire text-danger ms-1" title="Tăng ca"></i>{% endif %}
                                     </div>
@@ -167,7 +177,6 @@
                                         <span class="badge bg-dark text-white fw-bold" style="font-size: 8px;">Tối</span>
                                         <a href="{{ url_for('schedule.delete_by_info', employee_id=emp.id, date=date_key, shift='Tối') }}" class="text-danger fw-bold text-decoration-none px-1" title="Hủy ca này" onclick="return confirm('Bạn có chắc chắn muốn hủy ca này không?');"><i class="bi bi-x-circle-fill" style="font-size: 11px;"></i></a>
                                     </div>
-                                    <!-- THÊM ICON TĂNG CA CHO CA TỐI -->
                                     <div class="text-dark fw-bold text-truncate mt-1" style="font-size: 10px;" title="{{ sched_toi.task.task_name }}">
                                         {{ sched_toi.task.task_name }} {% if sched_toi.is_overtime %}<i class="bi bi-fire text-danger ms-1" title="Tăng ca"></i>{% endif %}
                                     </div>
