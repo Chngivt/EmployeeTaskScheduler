@@ -24,24 +24,51 @@ def index():
 @schedule_bp.route('/weekly')
 @login_required
 def weekly():
-    today = datetime.now().date()
-    start_of_week = today - timedelta(days=today.weekday())
+    # 1. Nhận tham số ngày từ URL (ĐỂ XEM CÁC TUẦN KHÁC)
+    date_param = request.args.get('date')
+    if date_param:
+        try:
+            base_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+        except ValueError:
+            base_date = datetime.now().date()
+    else:
+        base_date = datetime.now().date()
+
+    # 2. Tính toán danh sách ngày của tuần đó
+    start_of_week = base_date - timedelta(days=base_date.weekday())
     week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
     
+    # 3. Truyền biến Tuần Trước / Tuần Sau ra giao diện HTML
+    prev_week = (start_of_week - timedelta(days=7)).strftime('%Y-%m-%d')
+    next_week = (start_of_week + timedelta(days=7)).strftime('%Y-%m-%d')
+    
     employees = get_non_admin_employees()
-    schedules = Schedule.query.all()
+    
+    # 4. CHỈ tải lịch của tuần đang xem (Giúp web tải nhanh hơn rất nhiều)
+    schedules = Schedule.query.filter(
+        Schedule.date >= start_of_week, 
+        Schedule.date <= week_dates[-1]
+    ).all()
+    
     tasks = Task.query.all()
     
     schedule_objs = {(s.employee_id, s.date.strftime('%Y-%m-%d') if hasattr(s.date, 'strftime') else str(s.date), s.shift): s for s in schedules if s.date}
             
-    return render_template('schedule/weekly.html', employees=employees, week_dates=week_dates, schedule_objs=schedule_objs, tasks=tasks)
+    return render_template('schedule/weekly.html', 
+                           employees=employees, 
+                           week_dates=week_dates, 
+                           schedule_objs=schedule_objs, 
+                           tasks=tasks,
+                           prev_week=prev_week,
+                           next_week=next_week)
 
 @schedule_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
     if request.method == 'POST':
         employee_id, task_id, date_str, shift = request.form.get('employee_id'), request.form.get('task_id'), request.form.get('date'), request.form.get('shift')
-        if not all([employee_id, task_id, date_str, shift]): return redirect(request.referrer or url_for('schedule.weekly'))
+        if not all([employee_id, task_id, date_str, shift]): 
+            return redirect(request.referrer or url_for('schedule.weekly'))
 
         try:
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -57,6 +84,7 @@ def add():
         except Exception as e:
             db.session.rollback()
 
+        # Giữ nguyên tuần đang xem sau khi Thêm ca
         return redirect(request.referrer or url_for('schedule.weekly'))
     return render_template('schedule/add.html', employees=get_non_admin_employees(), tasks=Task.query.all())
 
@@ -80,16 +108,24 @@ def delete_by_info():
                 db.session.commit()
         except Exception as e:
             db.session.rollback()
-    return redirect(url_for('schedule.weekly'))
+    # Giữ nguyên tuần đang xem sau khi Xóa ca
+    return redirect(request.referrer or url_for('schedule.weekly'))
 
 @schedule_bp.route('/auto_assign', methods=['POST'])
 @login_required
 def auto_assign():
-    today = datetime.now().date()
-    week_dates = [(today - timedelta(days=today.weekday())) + timedelta(days=i) for i in range(7)]
-    employees, tasks = get_non_admin_employees(), Task.query.all()
+    start_date_str = request.form.get('start_date')
+    if start_date_str:
+        base_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+    else:
+        base_date = datetime.now().date()
+        
+    start_of_week = base_date - timedelta(days=base_date.weekday())
+    week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
     
-    if not employees or not tasks: return redirect(url_for('schedule.weekly'))
+    employees, tasks = get_non_admin_employees(), Task.query.all()
+    if not employees or not tasks: 
+        return redirect(request.referrer or url_for('schedule.weekly'))
     
     for d in week_dates:
         if d.weekday() >= 5: continue
@@ -101,17 +137,24 @@ def auto_assign():
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-    return redirect(url_for('schedule.weekly'))
+    return redirect(request.referrer or url_for('schedule.weekly'))
 
 @schedule_bp.route('/reset', methods=['POST'])
 @login_required
 def reset_schedule():
+    start_date_str = request.form.get('start_date')
     try:
-        Schedule.query.delete()
+        if start_date_str:
+            start_of_week = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_of_week = start_of_week + timedelta(days=6)
+            # AN TOÀN: Chỉ xóa các ca trong Tuần đang xem, không xóa sạch DB
+            Schedule.query.filter(Schedule.date >= start_of_week, Schedule.date <= end_of_week).delete()
+        else:
+            Schedule.query.delete()
         db.session.commit()
     except Exception:
         db.session.rollback()
-    return redirect(url_for('schedule.weekly'))
+    return redirect(request.referrer or url_for('schedule.weekly'))
 
 @schedule_bp.route('/import_excel', methods=['POST'])
 @login_required
@@ -150,4 +193,4 @@ def import_excel():
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-    return redirect(url_for('schedule.weekly'))
+    return redirect(request.referrer or url_for('schedule.weekly'))
