@@ -1,13 +1,11 @@
 import random
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.models.employee import Employee
-from app import db, mail
-from flask_mail import Message
+from app import db
 
-auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+auth_bp = Blueprint('auth', __name__)
 
-# --- HÀM KIỂM TRA ĐĂNG NHẬP ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -24,22 +22,12 @@ def login():
         
         emp = Employee.query.filter_by(email=email).first()
         if emp and emp.check_password(password):
-            # KIỂM TRA TRẠNG THÁI PHÊ DUYỆT CỦA ADMIN
-            if not emp.is_approved:
-                return render_template('auth/login.html', error="Tài khoản chờ Quản trị viên phê duyệt!")
-                
+            if not emp.is_approved and emp.role != 'admin':
+                return render_template('auth/login.html', error="Tài khoản của bạn đang chờ Admin phê duyệt!")
+            
             session['employee_id'] = emp.id
             session['fullname'] = emp.fullname
             session['role'] = emp.role
-            
-            # --- LƯU TRỮ ĐỊA CHỈ IP VÀO SESSION ---
-            if request.environ.get('HTTP_X_FORWARDED_FOR'):
-                ip_address = request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0]
-            else:
-                ip_address = request.remote_addr
-            session['ip_address'] = ip_address
-            # ---------------------------------
-            
             return redirect(url_for('dashboard'))
         else:
             return render_template('auth/login.html', error="Email hoặc mật khẩu không chính xác!")
@@ -57,23 +45,13 @@ def register():
         position = request.form.get('position')
         password = request.form.get('password')
         
-        # Kiểm tra trùng lặp
         existing_emp = Employee.query.filter((Employee.email == email) | (Employee.code == code)).first()
         if existing_emp:
-            return render_template('auth/register.html', error="Mã nhân viên hoặc Email đã tồn tại trong hệ thống!")
-            
-        # 1. Tạo mã xác nhận ngẫu nhiên 6 chữ số
-        verification_code = str(random.randint(100000, 999999))
+            return render_template('auth/register.html', error="Mã nhân viên hoặc Email đã tồn tại!")
         
-        # Tạo nhân viên mới với is_approved = False (Chờ Admin duyệt)
         new_emp = Employee(
-            code=code,
-            fullname=fullname,
-            email=email,
-            phone=phone,
-            department=department,
-            position=position,
-            role='employee',
+            code=code, fullname=fullname, email=email, phone=phone,
+            department=department, position=position, role='employee',
             is_approved=False
         )
         new_emp.set_password(password)
@@ -81,15 +59,7 @@ def register():
         db.session.add(new_emp)
         db.session.commit()
         
-        # 2. Gửi email xác thực Gmail của nhân viên
-        try:
-            msg = Message('Mã Xác Thực Tài Khoản - Employee Task Scheduler', recipients=[email])
-            msg.body = f"""Xin chào {fullname}, bạn đã đăng ký tài khoản trong Employee Task Scheduler. Mã xác thực của bạn là: {verification_code}. Tài khoản hiện đang chờ Quản trị viên (Admin) phê duyệt trước khi có thể đăng nhập."""
-            mail.send(msg)
-        except Exception as e:
-            print("Lỗi gửi mail:", e)
-            
-        return redirect(url_for('auth.login'))
+        return render_template('auth/login.html', error="Đăng ký thành công! Vui lòng chờ Admin phê duyệt tài khoản.")
         
     return render_template('auth/register.html')
 
