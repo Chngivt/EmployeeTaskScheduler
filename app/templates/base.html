@@ -143,7 +143,7 @@
             
             <!-- 2. Nhân viên -->
             <li class="nav-item mb-1">
-                <a href="/employee" class="nav-link{% if request.path.startswith('/employee') %} active{% endif %}">
+                <a href="/employee" class="nav-link{% if request.path.startswith('/employee') and not request.path.startswith('/employee/salary') %} active{% endif %}">
                     <i class="bi bi-people-fill me-2"></i> Nhân viên
                 </a>
             </li>
@@ -162,10 +162,17 @@
                 </a>
             </li>
             
-            <!-- 5. Lịch tuần (Trang bảng ma trận tuần) -->
+            <!-- 5. Lịch tuần -->
             <li class="nav-item mb-1">
                 <a href="/schedule/weekly" class="nav-link{% if request.path == '/schedule/weekly' %} active{% endif %}">
                     <i class="bi bi-calendar3 me-2"></i> Lịch tuần
+                </a>
+            </li>
+
+            <!-- THÊM MỚI: TÍNH LƯƠNG NHÂN VIÊN -->
+            <li class="nav-item mb-1">
+                <a href="/employee/salary" class="nav-link" title="Xuất file Excel Bảng Lương">
+                    <i class="bi bi-cash-coin me-2"></i> Tính lương
                 </a>
             </li>
 
@@ -195,10 +202,10 @@
                         <small class="text-muted d-block" style="font-size: 11px;">{{ 'Quản trị viên' if session.get('role') == 'admin' else 'Nhân viên' }}</small>
                     </div>
                 </div>
-                <a href="{{ url_for('auth.logout') }}" class="text-danger" title="Đăng xuất"><i class="bi bi-box-arrow-right fs-5"></i></a>
+                <a href="/auth/logout" class="text-danger" title="Đăng xuất"><i class="bi bi-box-arrow-right fs-5"></i></a>
             </div>
             {% else %}
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100 btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập</a>
+            <a href="/auth/login" class="btn btn-primary w-100 btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập</a>
             {% endif %}
         </div>
     </div>
