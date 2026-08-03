@@ -217,7 +217,11 @@ def salary_view():
             except:
                 base_wage = 150000
 
-            is_ot = getattr(s, 'is_overtime', False)
+            # TỰ ĐỘNG TÍNH LÀ TĂNG CA NẾU LÀ CA TỐI HOẶC CUỐI TUẦN
+            is_weekend = s.date.weekday() >= 5
+            is_night = (s.shift == 'Tối')
+            is_ot = getattr(s, 'is_overtime', False) or is_weekend or is_night
+
             if is_ot:
                 total_salary += base_wage * OVERTIME_MULTIPLIER
                 overtime_count += 1
@@ -278,7 +282,11 @@ def export_salary():
             except:
                 base_wage = 150000
 
-            is_ot = getattr(s, 'is_overtime', False)
+            # TỰ ĐỘNG TÍNH LÀ TĂNG CA NẾU LÀ CA TỐI HOẶC CUỐI TUẦN
+            is_weekend = s.date.weekday() >= 5
+            is_night = (s.shift == 'Tối')
+            is_ot = getattr(s, 'is_overtime', False) or is_weekend or is_night
+
             if is_ot:
                 total_salary += base_wage * OVERTIME_MULTIPLIER
                 overtime_count += 1
