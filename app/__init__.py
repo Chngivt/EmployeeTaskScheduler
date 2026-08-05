@@ -40,7 +40,7 @@ def create_app():
                 department="Quản trị",
                 position="Admin",
                 role="admin",
-                is_approved=True # Bổ sung: Admin mặc định được duyệt sẵn
+                is_approved=True 
             )
             admin_emp.set_password("admin123")
             db.session.add(admin_emp)
@@ -58,7 +58,6 @@ def create_app():
     app.register_blueprint(schedule_bp)
 
     from app.routes.auth import auth_bp
-    # FIX LỖI 404: KHÔNG dùng url_prefix='/auth' để các link /login và /register hoạt động khớp với HTML
     app.register_blueprint(auth_bp)
 
     from app.routes.export import export_bp
@@ -73,11 +72,23 @@ def create_app():
 
         from datetime import datetime, timedelta
         
-        total_emp = Employee.query.count()
+        # ĐÃ SỬA: Lọc bỏ Quản trị viên khỏi tổng số nhân sự hiển thị
+        total_emp = Employee.query.filter(
+            Employee.role != 'admin', 
+            Employee.email != 'caohoangviet738@gmail.com', 
+            Employee.department != 'Quản trị'
+        ).count()
+        
         total_task = Task.query.count()
         total_schedule = Schedule.query.count()
         
-        employees = Employee.query.all()
+        # ĐÃ SỬA: Lọc bỏ Quản trị viên khỏi danh sách hiển thị bảng lịch Dashboard
+        employees = Employee.query.filter(
+            Employee.role != 'admin', 
+            Employee.email != 'caohoangviet738@gmail.com', 
+            Employee.department != 'Quản trị'
+        ).all()
+        
         schedules = Schedule.query.all()
         tasks = Task.query.all()
         
@@ -111,7 +122,11 @@ def create_app():
         if 'fullname' not in session:
             return redirect(url_for('auth.login'))
 
-        total_emp = Employee.query.count()
+        total_emp = Employee.query.filter(
+            Employee.role != 'admin', 
+            Employee.email != 'caohoangviet738@gmail.com', 
+            Employee.department != 'Quản trị'
+        ).count()
         total_task = Task.query.count()
         total_schedule = Schedule.query.count()
         return render_template('report.html', 
@@ -133,7 +148,11 @@ def create_app():
         from datetime import datetime, timedelta
         from sqlalchemy import func
         
-        total_employees = Employee.query.count()
+        total_employees = Employee.query.filter(
+            Employee.role != 'admin', 
+            Employee.email != 'caohoangviet738@gmail.com', 
+            Employee.department != 'Quản trị'
+        ).count()
         total_tasks = Task.query.count()
         total_schedules = Schedule.query.count()
         
