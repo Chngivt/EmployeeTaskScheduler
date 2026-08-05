@@ -1,78 +1,84 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
-        <h4 class="fw-bold text-dark mb-1"><i class="bi bi-list-check text-primary me-2"></i> Quản Lý Danh Sách Phân Công</h4>
-        <small class="text-muted">Danh sách tất cả các ca làm việc đã được phân công trong hệ thống</small>
+        <h4 class="fw-bold text-dark mb-1"><i class="bi bi-people-fill text-primary me-2"></i> Danh Sách Nhân Viên</h4>
+        <small class="text-muted">Quản lý hồ sơ, phòng ban và tài khoản nhân sự</small>
     </div>
+    <!-- 1. CHỈ ADMIN MỚI THẤY NÚT DUYỆT TÀI KHOẢN VÀ THÊM MỚI -->
+    {% if session.get('role') == 'admin' %}
+    <div class="d-flex align-items-center gap-2">
+        <a href="/employee/pending-users" class="btn btn-warning shadow-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-person-lines-fill me-1"></i> Duyệt Tài Khoản
+        </a>
+        <a href="/employee/add" class="btn btn-primary shadow-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-person-plus-fill me-1"></i> Thêm Nhân Viên Mới
+        </a>
+    </div>
+    {% endif %}
 </div>
-
 <div class="card shadow-sm border-0 rounded-4">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 text-center" style="font-size: 13px;">
                 <thead class="table-light">
                     <tr>
-                        <th class="py-3 text-start ps-4" style="width: 80px;">STT</th>
-                        <th class="py-3 text-start">Nhân viên</th>
-                        <th class="py-3 text-start">Công việc</th>
-                        <th class="py-3">Ngày làm</th>
-                        <th class="py-3">Ca làm</th>
+                        <th class="py-3 text-start ps-4">Nhân viên</th>
+                        <th class="py-3 text-start">Email</th>
+                        <th class="py-3">Số điện thoại</th>
+                        <th class="py-3">Phòng ban</th>
+                        <th class="py-3">Chức vụ</th>
+                        <!-- 2. CHỈ ADMIN MỚI THẤY TIÊU ĐỀ THAO TÁC -->
+                        {% if session.get('role') == 'admin' %}
                         <th class="py-3 text-end pe-4">Thao tác</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% if schedules %}
-                        {% for s in schedules %}
+                    {% if employees %}
+                        {% for emp in employees %}
                         <tr>
-                            <td class="text-start ps-4 py-3 fw-semibold text-secondary">{{ loop.index }}</td>
-                            
-                            <!-- CỘT NHÂN VIÊN (ĐÃ FIX CHUẨN ẢNH AVATAR) -->
-                            <td class="text-start py-3">
+                            <td class="text-start ps-4 py-3">
                                 <div class="d-flex align-items-center">
-                                    {% if s.employee and s.employee.avatar %}
-                                        <img src="{{ url_for('static', filename=s.employee.avatar) }}" 
-                                             alt="{{ s.employee.fullname }}" 
+                                    {% if emp.avatar %}
+                                        <img src="{{ url_for('static', filename=emp.avatar) }}" 
+                                             alt="{{ emp.fullname }}" 
                                              class="rounded-circle me-3 border shadow-sm" 
                                              style="width: 40px; height: 40px; object-fit: cover;">
-                                    {% elif s.employee %}
+                                    {% else %}
                                         <div class="bg-primary bg-opacity-15 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 fw-bold" 
                                              style="width: 40px; height: 40px; font-size: 15px;">
-                                            {{ s.employee.fullname[0]|upper }}
+                                            {{ emp.fullname[0]|upper }}
                                         </div>
                                     {% endif %}
-
                                     <div>
-                                        <strong class="text-dark d-block fw-bold">{{ s.employee.fullname if s.employee else 'N/A' }}</strong>
-                                        <small class="text-muted" style="font-size: 11px;">Mã: {{ s.employee.code if s.employee else '' }}</small>
+                                        <strong class="text-dark d-block fw-bold">{{ emp.fullname }}</strong>
+                                        <small class="text-muted" style="font-size: 11px;">Mã: {{ emp.code }}</small>
                                     </div>
                                 </div>
                             </td>
-
-                            <td class="text-start fw-semibold text-primary">
-                                {{ s.task.task_name if s.task else 'Chưa có công việc' }}
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark border px-2 py-1">
-                                    {{ s.date.strftime('%d/%m/%Y') if s.date else '' }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-{{ 'warning' if s.shift == 'Chiều' else ('danger' if s.shift == 'Tối' else 'success') }} px-2 py-1">
-                                    {{ s.shift }}
-                                </span>
-                            </td>
+                            <td class="text-start text-secondary">{{ emp.email }}</td>
+                            <td><span class="badge bg-light text-dark border font-monospace px-2 py-1">{{ emp.phone }}</span></td>
+                            <td><span class="badge bg-info bg-opacity-10 text-info fw-bold px-2 py-1">{{ emp.department }}</span></td>
+                            <td class="fw-semibold text-dark">{{ emp.position }}</td>
+                            <!-- 3. CHỈ ADMIN MỚI THẤY NÚT SỬA & XÓA -->
+                            {% if session.get('role') == 'admin' %}
                             <td class="text-end pe-4">
-                                <a href="{{ url_for('schedule.delete', id=s.id) }}" class="btn btn-outline-danger btn-sm rounded-circle p-1 px-2" onclick="return confirm('Bạn có chắc chắn muốn xóa phân công này?')" title="Xóa">
+                                <!-- NÚT CHỈNH SỬA THÔNG TIN -->
+                                <a href="/employee/edit/{{ emp.id }}" class="btn btn-outline-primary btn-sm rounded-circle p-1 px-2 me-1" title="Chỉnh sửa">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <!-- NÚT XÓA -->
+                                <a href="/employee/delete/{{ emp.id }}" class="btn btn-outline-danger btn-sm rounded-circle p-1 px-2" onclick="return confirm('Bạn có chắc chắn muốn xóa nhân viên này?')" title="Xóa">
                                     <i class="bi bi-trash"></i>
                                 </a>
-                            </td>
+                          </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="6" class="text-muted py-5 text-center">Chưa có lịch phân công nào trong hệ thống.</td>
+                            <td colspan="6" class="text-muted py-5 text-center">Chưa có nhân viên nào trong danh sách.</td>
                         </tr>
                     {% endif %}
                 </tbody>
@@ -80,4 +86,5 @@
         </div>
     </div>
 </div>
-{% endblock %}
+
+{% endblock %} 
