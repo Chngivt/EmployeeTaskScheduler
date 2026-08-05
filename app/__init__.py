@@ -1,5 +1,4 @@
 import os
-# Đã thêm session, redirect vào đây
 from flask import Flask, render_template, session, redirect, url_for 
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -40,7 +39,8 @@ def create_app():
                 phone="0909123456",
                 department="Quản trị",
                 position="Admin",
-                role="admin"
+                role="admin",
+                is_approved=True # Bổ sung: Admin mặc định được duyệt sẵn
             )
             admin_emp.set_password("admin123")
             db.session.add(admin_emp)
@@ -58,8 +58,8 @@ def create_app():
     app.register_blueprint(schedule_bp)
 
     from app.routes.auth import auth_bp
-    # LỖI ĐƯỢC FIX TẠI ĐÂY: Khai báo rõ tiền tố URL cho nhóm xác thực
-    app.register_blueprint(auth_bp, url_prefix='/auth')
+    # FIX LỖI 404: KHÔNG dùng url_prefix='/auth' để các link /login và /register hoạt động khớp với HTML
+    app.register_blueprint(auth_bp)
 
     from app.routes.export import export_bp
     app.register_blueprint(export_bp)
@@ -68,9 +68,8 @@ def create_app():
     # --- ROUTE TRANG CHỦ (DASHBOARD) ---
     @app.route('/')
     def dashboard():
-        # KHÓA BẢO VỆ: Nếu chưa đăng nhập thì ép chuyển hướng về trang Login
         if 'fullname' not in session:
-            return redirect('/auth/login')
+            return redirect(url_for('auth.login'))
 
         from datetime import datetime, timedelta
         
@@ -89,10 +88,8 @@ def create_app():
         schedule_dict = {}
         for s in schedules:
             if s.date:
-                # Ép kiểu s.date về chuỗi 'YYYY-MM-DD' chuẩn 100% với giao diện
                 date_key = s.date.strftime('%Y-%m-%d') if hasattr(s.date, 'strftime') else str(s.date)
                 
-                # Lấy tên công việc linh hoạt theo model
                 t_name = "Có lịch"
                 if s.task:
                     t_name = getattr(s.task, 'task_name', None) or getattr(s.task, 'name', None) or "Có lịch"
@@ -111,9 +108,8 @@ def create_app():
     # --- ROUTE BÁO CÁO ---
     @app.route('/report')
     def report():
-        # KHÓA BẢO VỆ
         if 'fullname' not in session:
-            return redirect('/auth/login')
+            return redirect(url_for('auth.login'))
 
         total_emp = Employee.query.count()
         total_task = Task.query.count()
@@ -126,9 +122,8 @@ def create_app():
     # --- ROUTE CÀI ĐẶT ---
     @app.route('/settings')
     def settings():
-        # KHÓA BẢO VỆ
         if 'fullname' not in session:
-            return redirect('/auth/login')
+            return redirect(url_for('auth.login'))
 
         return render_template('settings.html')
 
