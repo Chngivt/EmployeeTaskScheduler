@@ -82,6 +82,18 @@ def add():
             department=department, position=position, role='employee', is_approved=True
         )
         new_emp.set_password('123456')
+        
+        # --- BỔ SUNG XỬ LÝ ẢNH AVATAR KHI THÊM ---
+        file = request.files.get('avatar')
+        if file and file.filename != '' and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Thêm thời gian hoặc định danh để tránh trùng tên file
+            filename = f"emp_{code}_{filename}"
+            upload_folder = os.path.join('app', 'static', 'uploads', 'avatars')
+            os.makedirs(upload_folder, exist_ok=True)
+            file.save(os.path.join(upload_folder, filename))
+            new_emp.avatar = f"uploads/avatars/{filename}"
+
         db.session.add(new_emp)
         db.session.commit()
         return redirect(url_for('employee.index'))
@@ -100,6 +112,16 @@ def edit(id):
         emp.position = request.form.get('position')
         emp.role = request.form.get('role', 'employee')
         
+        # --- BỔ SUNG XỬ LÝ ẢNH AVATAR KHI SỬA ---
+        file = request.files.get('avatar')
+        if file and file.filename != '' and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filename = f"emp_{emp.code}_{filename}"
+            upload_folder = os.path.join('app', 'static', 'uploads', 'avatars')
+            os.makedirs(upload_folder, exist_ok=True)
+            file.save(os.path.join(upload_folder, filename))
+            emp.avatar = f"uploads/avatars/{filename}"
+
         new_password = request.form.get('password')
         if new_password and new_password.strip():
             emp.set_password(new_password.strip())
