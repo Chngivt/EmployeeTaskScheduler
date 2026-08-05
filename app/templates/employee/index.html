@@ -45,7 +45,7 @@
                             <td class="text-start ps-4 py-3">
                                 <div class="d-flex align-items-center">
                                     {% if emp.avatar %}
-                                        <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}" 
+                                        <img src="{{ url_for('static', filename=emp.avatar) }}" 
                                              alt="{{ emp.fullname }}" 
                                              class="rounded-circle me-3 border shadow-sm" 
                                              style="width: 40px; height: 40px; object-fit: cover;">
