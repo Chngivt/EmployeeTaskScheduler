@@ -95,8 +95,9 @@
                         <tr>
                             <td class="text-start ps-3 py-3 bg-white">
                                 <div class="d-flex align-items-center">
+                                    <!-- ĐÃ SỬA: Dùng trực tiếp emp.avatar giống trang Nhân viên -->
                                     {% if emp.avatar %}
-                                        <img src="{{ url_for('static', filename='uploads/avatars/' + emp.avatar) }}" 
+                                        <img src="{{ url_for('static', filename=emp.avatar) }}" 
                                              alt="{{ emp.fullname }}" 
                                              class="rounded-circle me-2 border shadow-sm" 
                                              style="width: 32px; height: 32px; object-fit: cover;">
@@ -223,7 +224,6 @@
     function openRegisterModal(empId, empName, dateStr, shift) {
         var modalEl = document.getElementById('quickRegisterModal');
         
-        // CHUYỂN MODAL RA NGOÀI CÙNG THẺ BODY ĐỂ KHÔNG BỊ LỚP MỜ BẤM ĐÈ
         if (modalEl.parentElement !== document.body) {
             document.body.appendChild(modalEl);
         }
