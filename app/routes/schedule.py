@@ -11,7 +11,12 @@ from app.routes.auth import login_required
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedule')
 
 def get_non_admin_employees():
-    return Employee.query.filter(Employee.role != 'admin', Employee.email != 'caohoangviet738@gmail.com', Employee.department != 'Quản trị').all()
+    # ĐÃ CẬP NHẬT: Lọc triệt để tài khoản admin, email admin và phòng ban Quản trị
+    return Employee.query.filter(
+        Employee.role != 'admin', 
+        Employee.email != 'caohoangviet738@gmail.com', 
+        Employee.department != 'Quản trị'
+    ).all()
 
 @schedule_bp.route('/')
 @login_required
@@ -173,7 +178,7 @@ def import_excel():
                 date_obj = datetime.strptime(f"{match.group(1)}/{datetime.now().year}", '%d/%m/%Y').date()
                 
                 emp = Employee.query.filter(db.func.trim(Employee.fullname) == str(row['Nhân viên']).strip()).first()
-                if not emp or emp.role == 'admin': continue
+                if not emp or emp.role == 'admin' or emp.department == 'Quản trị': continue
                     
                 task_name_str = str(row['Công việc']).strip()
                 task = Task.query.filter(db.func.trim(Task.task_name) == task_name_str).first()
