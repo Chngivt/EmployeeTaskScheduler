@@ -22,7 +22,8 @@ def login():
         
         emp = Employee.query.filter_by(email=email).first()
         if emp and emp.check_password(password):
-            if not emp.is_approved and emp.role != 'admin':
+            # Chặn đăng nhập nếu chưa được Admin duyệt (ngoại trừ tài khoản Admin)
+            if hasattr(emp, 'is_approved') and not emp.is_approved and emp.role != 'admin':
                 return render_template('auth/login.html', error="Tài khoản của bạn đang chờ Admin phê duyệt!")
             
             session['employee_id'] = emp.id
@@ -45,21 +46,33 @@ def register():
         position = request.form.get('position')
         password = request.form.get('password')
         
+        # 1. Kiểm tra trùng lặp mã NV hoặc Email
         existing_emp = Employee.query.filter((Employee.email == email) | (Employee.code == code)).first()
         if existing_emp:
-            return render_template('auth/register.html', error="Mã nhân viên hoặc Email đã tồn tại!")
+            return render_template('auth/register.html', error="Mã nhân viên hoặc Email đã tồn tại trong hệ thống!")
         
+        # 2. Tạo đối tượng nhân viên mới
         new_emp = Employee(
-            code=code, fullname=fullname, email=email, phone=phone,
-            department=department, position=position, role='employee',
+            code=code, 
+            fullname=fullname, 
+            email=email, 
+            phone=phone,
+            department=department, 
+            position=position, 
+            role='employee',
             is_approved=False
         )
         new_emp.set_password(password)
         
-        db.session.add(new_emp)
-        db.session.commit()
-        
-        return render_template('auth/login.html', error="Đăng ký thành công! Vui lòng chờ Admin phê duyệt tài khoản.")
+        # 3. Lưu vào Database an toàn với try...except
+        try:
+            db.session.add(new_emp)
+            db.session.commit()
+            # Trả về trang đăng nhập với thông báo thành công
+            return render_template('auth/login.html', error="Đăng ký thành công! Vui lòng chờ Admin phê duyệt tài khoản để có thể đăng nhập.")
+        except Exception as e:
+            db.session.rollback()
+            return render_template('auth/register.html', error=f"Đã xảy ra lỗi khi lưu vào cơ sở dữ liệu: {e}")
         
     return render_template('auth/register.html')
 
