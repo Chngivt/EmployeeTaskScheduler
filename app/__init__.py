@@ -58,7 +58,8 @@ def create_app():
     app.register_blueprint(schedule_bp)
 
     from app.routes.auth import auth_bp
-    app.register_blueprint(auth_bp)
+    # LỖI ĐƯỢC FIX TẠI ĐÂY: Khai báo rõ tiền tố URL cho nhóm xác thực
+    app.register_blueprint(auth_bp, url_prefix='/auth')
 
     from app.routes.export import export_bp
     app.register_blueprint(export_bp)
